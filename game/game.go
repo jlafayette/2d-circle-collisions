@@ -22,9 +22,9 @@ var (
 //	Draw
 //	Layout
 type Game struct {
-	width   int
-	height  int
-	circles []*Circle
+	width  int
+	height int
+	engine *Engine
 }
 
 // NewGame creates a new Game
@@ -40,23 +40,23 @@ func NewGame(width, height int) *Game {
 	circles = append(circles, NewCircle(float64(width), float64(height), 25.0, color.White))
 
 	return &Game{
-		width:   width,
-		height:  height,
-		circles: circles,
+		width:  width,
+		height: height,
+		engine: NewEngine(circles),
 	}
 }
 
 // Update function is called every tick and updates the game's logical state.
 func (g *Game) Update() error {
 
-	for i := 0; len(g.circles) < 500 && i < 5; i++ {
-		xpos := randFloat(100, float64(g.width)-100)
-		ypos := randFloat(100, float64(g.height)-100)
-		radius := randFloat(100, 100)
+	for i := 0; len(g.engine.circles) < 500 && i < 2; i++ {
+		xpos := randFloat(0, float64(g.width))
+		ypos := randFloat(0, float64(g.height))
+		radius := randFloat(5, 50)
 		circle := NewCircle(xpos, ypos, radius, color.White)
-		g.circles = append(g.circles, circle)
+		g.engine.circles = append(g.engine.circles, circle)
 	}
-
+	g.engine.update()
 	return nil
 }
 
@@ -65,8 +65,8 @@ func (g *Game) Update() error {
 // second.
 func (g *Game) Draw(screen *ebiten.Image) {
 	screen.Fill(color.Black)
-	for i := range g.circles {
-		g.circles[i].Draw(screen)
+	for i := range g.engine.circles {
+		g.engine.circles[i].Draw(screen)
 	}
 }
 

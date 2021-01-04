@@ -52,29 +52,28 @@ func NewCircle(x, y, r float64, color color.Color) *Circle {
 	bresenham(color, img)
 
 	return &Circle{
-		x:     x,
-		y:     y,
-		r:     r,
-		image: img,
+		posX:   x,
+		posY:   y,
+		radius: r,
+		image:  img,
 	}
 }
 
 // Circle represents a circle
 type Circle struct {
-	x     float64
-	y     float64
-	r     float64
-	image *ebiten.Image
-}
-
-// Update circle state
-func (c *Circle) Update() {
-
+	posX   float64
+	posY   float64
+	velX   float64
+	velY   float64
+	accX   float64
+	accY   float64
+	radius float64
+	image  *ebiten.Image
 }
 
 // Draw the circle to the screen.
 func (c Circle) Draw(screen *ebiten.Image) {
 	op := &ebiten.DrawImageOptions{}
-	op.GeoM.Translate(c.x-c.r, c.y-c.r)
+	op.GeoM.Translate(c.posX-c.radius, c.posY-c.radius)
 	screen.DrawImage(c.image, op)
 }
