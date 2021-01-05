@@ -10,8 +10,8 @@ import (
 var (
 	// Screen width and height indicates how many pixels to draw, not the
 	// window dimensions.
-	screenWidth  = 1036
-	screenHeight = 640
+	screenWidth  = 1920 // 1036
+	screenHeight = 1080 // 640
 )
 
 func main() {

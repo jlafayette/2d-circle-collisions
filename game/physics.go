@@ -5,13 +5,46 @@ import "math"
 // NewEngine initializes a new physics engine
 func NewEngine(circles []*Circle) *Engine {
 	return &Engine{
-		circles: circles,
+		selectedIndex: -1,
+		circles:       circles,
 	}
 }
 
 // Engine handles collisions
 type Engine struct {
-	circles []*Circle
+	selectedIndex int
+	circles       []*Circle
+}
+
+func (e *Engine) selectAtPostion(x, y float64) {
+	e.selectedIndex = e.circleAtPosition(x, y)
+}
+
+func (e *Engine) circleAtPosition(x, y float64) int {
+	for i := range e.circles {
+		var cx = e.circles[i].posX
+		var cy = e.circles[i].posY
+		var cr = e.circles[i].radius
+		if math.Abs((cx-x)*(cx-x)+(cy-y)*(cy-y)) < (cr * cr) {
+			return i
+		}
+	}
+	return -1
+}
+
+func (e *Engine) moveSelectedTo(x, y float64) {
+	e.moveCircleTo(e.selectedIndex, x, y)
+}
+
+func (e *Engine) moveCircleTo(index int, x, y float64) {
+	if index >= 0 && index < len(e.circles) {
+		e.circles[index].posX = x
+		e.circles[index].posY = y
+	}
+}
+
+func (e *Engine) deselect() {
+	e.selectedIndex = -1
 }
 
 func (e *Engine) overlap(i, j int) bool {
@@ -25,7 +58,6 @@ func (e *Engine) overlap(i, j int) bool {
 }
 
 func (e *Engine) update() {
-	// TODO: implement static collisions for circles
 	collided := true
 	maxSteps := 5
 	for step := maxSteps; step > 0 && collided; step-- {

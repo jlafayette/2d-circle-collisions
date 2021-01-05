@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"github.com/hajimehoshi/ebiten/v2"
+	"github.com/hajimehoshi/ebiten/v2/inpututil"
 )
 
 var (
@@ -49,9 +50,30 @@ func NewGame(width, height int) *Game {
 // Update function is called every tick and updates the game's logical state.
 func (g *Game) Update() error {
 
-	for i := 0; len(g.engine.circles) < 500 && i < 2; i++ {
-		xpos := randFloat(0, float64(g.width))
-		ypos := randFloat(0, float64(g.height))
+	mx, my := ebiten.CursorPosition()
+	mxf := float64(mx)
+	myf := float64(my)
+
+	// If a circle is under the mouse curser, then select it
+	if inpututil.IsMouseButtonJustPressed(ebiten.MouseButtonLeft) {
+		g.engine.selectAtPostion(mxf, myf)
+	}
+
+	// Handle dragging selected circle
+	if ebiten.IsMouseButtonPressed(ebiten.MouseButtonLeft) {
+		g.engine.moveSelectedTo(mxf, myf)
+	}
+
+	// Clear selection
+	if inpututil.IsMouseButtonJustReleased(ebiten.MouseButtonLeft) {
+		g.engine.deselect()
+	}
+
+	for i := 0; len(g.engine.circles) < 500 && i < 5; i++ {
+		xbuffer := float64(g.width / 4)
+		ybuffer := float64(g.height / 4)
+		xpos := randFloat(xbuffer, float64(g.width)-xbuffer)
+		ypos := randFloat(ybuffer, float64(g.height)-ybuffer)
 		radius := randFloat(5, 50)
 		circle := NewCircle(xpos, ypos, radius, color.White)
 		g.engine.circles = append(g.engine.circles, circle)
