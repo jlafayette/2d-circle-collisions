@@ -6,6 +6,12 @@ import (
 	"github.com/hajimehoshi/ebiten/v2"
 )
 
+// var (
+// 	selectedColor = color.RGBA{0, 100, 255, 255}
+// 	collidedColor = color.RGBA{255, 0, 0, 255}
+// 	defaultColor  = color.RGBA{200, 200, 200, 255}
+// )
+
 // Bresenham algorithm for rasterizing a circle
 // Draw a circle that fills given image
 func bresenham(color color.Color, img *ebiten.Image) {
@@ -52,28 +58,35 @@ func NewCircle(x, y, r float64, color color.Color) *Circle {
 	bresenham(color, img)
 
 	return &Circle{
-		posX:   x,
-		posY:   y,
-		radius: r,
-		image:  img,
+		selected: false,
+		posX:     x,
+		posY:     y,
+		radius:   r,
+		image:    img,
 	}
 }
 
 // Circle represents a circle
 type Circle struct {
-	posX   float64
-	posY   float64
-	velX   float64
-	velY   float64
-	accX   float64
-	accY   float64
-	radius float64
-	image  *ebiten.Image
+	selected bool
+	posX     float64
+	posY     float64
+	velX     float64
+	velY     float64
+	accX     float64
+	accY     float64
+	radius   float64
+	image    *ebiten.Image
 }
 
 // Draw the circle to the screen.
 func (c Circle) Draw(screen *ebiten.Image) {
 	op := &ebiten.DrawImageOptions{}
 	op.GeoM.Translate(c.posX-c.radius, c.posY-c.radius)
+
+	if c.selected {
+		op.ColorM.Scale(0, 0.5, 1, 1)
+	}
+
 	screen.DrawImage(c.image, op)
 }
