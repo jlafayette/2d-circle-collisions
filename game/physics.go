@@ -14,8 +14,9 @@ func NewEngine(circles []*Circle) *Engine {
 
 // Engine handles collisions
 type Engine struct {
-	selectedIndex int
-	circles       []*Circle
+	selectedIndex  int
+	circles        []*Circle
+	collidingPairs []collidingPair
 }
 
 func (e *Engine) selectAtPostion(x, y float64) {
@@ -67,6 +68,11 @@ func (e *Engine) overlap(i, j int) bool {
 	return math.Abs((x1-x2)*(x1-x2)+(y1-y2)*(y1-y2)) < (r1+r2)*(r1+r2)
 }
 
+type collidingPair struct {
+	a int
+	b int
+}
+
 func (e *Engine) update(width, height int, elapsedTime float64) {
 
 	// Update ball positions
@@ -111,6 +117,8 @@ func (e *Engine) update(width, height int, elapsedTime float64) {
 	// Resolve static collisions
 	collided := true
 	maxSteps := 5
+	// clear slice but keep capacity
+	e.collidingPairs = e.collidingPairs[:0]
 	for step := maxSteps; step > 0 && collided; step-- {
 		collided = false
 		for i := range e.circles {
@@ -120,6 +128,7 @@ func (e *Engine) update(width, height int, elapsedTime float64) {
 				}
 				if e.overlap(i, j) {
 					collided = true
+					e.collidingPairs = append(e.collidingPairs, collidingPair{i, j})
 					// distance between ball centers
 					x1 := e.circles[i].posX
 					y1 := e.circles[i].posY

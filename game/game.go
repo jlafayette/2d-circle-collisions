@@ -75,7 +75,7 @@ func (g *Game) Update() error {
 		g.engine.deselect()
 	}
 
-	for i := 0; len(g.engine.circles) < 600 && i < 2; i++ {
+	for i := 0; len(g.engine.circles) < 200 && i < 2; i++ {
 		xbuffer := float64(g.width / 4)
 		ybuffer := float64(g.height / 4)
 		xpos := randFloat(xbuffer, float64(g.width)-xbuffer)
@@ -102,6 +102,18 @@ func (g *Game) Draw(screen *ebiten.Image) {
 	screen.Fill(color.Black)
 	for i := range g.engine.circles {
 		g.engine.circles[i].Draw(screen)
+	}
+
+	// Draw red lines between colliding circles
+	for _, p := range g.engine.collidingPairs {
+		ebitenutil.DrawLine(
+			screen,
+			g.engine.circles[p.a].posX,
+			g.engine.circles[p.a].posY,
+			g.engine.circles[p.b].posX,
+			g.engine.circles[p.b].posY,
+			color.RGBA{255, 0, 0, 30},
+		)
 	}
 
 	// Debug text
