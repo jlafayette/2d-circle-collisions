@@ -81,7 +81,7 @@ func (g *Game) Update() error {
 		g.engine.dynamicRelease(mxf, myf)
 	}
 
-	for i := 0; len(g.engine.circles) < 500 && i < 2; i++ {
+	for i := 0; len(g.engine.circles) < 100 && i < 2; i++ {
 		xbuffer := float64(g.width / 4)
 		ybuffer := float64(g.height / 4)
 		xpos := randFloat(xbuffer, float64(g.width)-xbuffer)

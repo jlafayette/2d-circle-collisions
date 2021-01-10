@@ -181,13 +181,44 @@ func (e *Engine) update(width, height int, elapsedTime float64) {
 		}
 	}
 
-	// apply acceleration from static collision displacement
-	for i := range e.circles {
-		// should be proportional to area
-		multiplier := 10.0
-		amountX := ((e.circles[i].posX - e.circles[i].prevPosX) / e.circles[i].radius) * multiplier
-		amountY := ((e.circles[i].posY - e.circles[i].prevPosY) / e.circles[i].radius) * multiplier
-		e.circles[i].accX = amountX
-		e.circles[i].accY = amountY
+	// dynamic collisions
+	for _, pair := range e.collidingPairs {
+		px1 := e.circles[pair.a].posX
+		py1 := e.circles[pair.a].posY
+		vx1 := e.circles[pair.a].velX
+		vy1 := e.circles[pair.a].velY
+		a1 := e.circles[pair.a].area
+		px2 := e.circles[pair.b].posX
+		py2 := e.circles[pair.b].posY
+		vx2 := e.circles[pair.b].velX
+		vy2 := e.circles[pair.b].velY
+		a2 := e.circles[pair.b].area
+
+		// Distance between balls
+		distance := math.Sqrt((px1-px2)*(px1-px2) + (py1-py2)*(py1-py2))
+
+		// Normal
+		nx := (px2 - px1) / distance
+		ny := (py2 - py1) / distance
+
+		// Calculate new velocities from elastic collision
+		// https://en.wikipedia.org/wiki/Elastic_collision
+		kx := vx1 - vx2
+		ky := vy1 - vy2
+		p := 2.0 * (nx*kx + ny*ky) / (a1 + a2)
+		e.circles[pair.a].velX = vx1 - p*a2*nx
+		e.circles[pair.a].velY = vy1 - p*a2*ny
+		e.circles[pair.b].velX = vx2 + p*a1*nx
+		e.circles[pair.b].velY = vy2 + p*a1*ny
 	}
+
+	// // apply acceleration from static collision displacement
+	// for i := range e.circles {
+	// 	// should be proportional to area
+	// 	multiplier := 10.0
+	// 	amountX := ((e.circles[i].posX - e.circles[i].prevPosX) / e.circles[i].radius) * multiplier
+	// 	amountY := ((e.circles[i].posY - e.circles[i].prevPosY) / e.circles[i].radius) * multiplier
+	// 	e.circles[i].accX = amountX
+	// 	e.circles[i].accY = amountY
+	// }
 }
