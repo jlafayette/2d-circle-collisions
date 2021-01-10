@@ -34,6 +34,39 @@ func (e *Engine) dynamicAtPosition(x, y float64) {
 	}
 }
 
+func (e *Engine) selectNearestPostion(x, y float64) {
+	e.selectedIndex = e.circleNearestPosition(x, y)
+	if e.selectedIndex >= 0 {
+		e.circles[e.selectedIndex].selected = true
+	}
+}
+
+func (e *Engine) dynamicNearestPosition(x, y float64) {
+	e.dynamicIndex = e.circleNearestPosition(x, y)
+	if e.dynamicIndex >= 0 {
+		e.circles[e.dynamicIndex].selected = true
+	}
+}
+
+func (e *Engine) circleNearestPosition(x, y float64) int {
+	minDistance := math.MaxFloat64
+	closest := -1
+	for i := range e.circles {
+		cx := e.circles[i].posX
+		cy := e.circles[i].posY
+		cr := e.circles[i].radius
+		d := math.Abs((cx-x)*(cx-x) + (cy-y)*(cy-y))
+		if d < (cr * cr) {
+			return i
+		}
+		if d < minDistance {
+			minDistance = d
+			closest = i
+		}
+	}
+	return closest
+}
+
 func (e *Engine) circleAtPosition(x, y float64) int {
 	for i := range e.circles {
 		cx := e.circles[i].posX

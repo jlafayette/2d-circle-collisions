@@ -62,7 +62,7 @@ func (g *Game) Update() error {
 
 	// If a circle is under the mouse curser, then select it
 	if inpututil.IsMouseButtonJustPressed(ebiten.MouseButtonLeft) {
-		g.engine.selectAtPostion(mxf, myf)
+		g.engine.selectNearestPostion(mxf, myf)
 	}
 	// Handle pulling selected circle
 	if ebiten.IsMouseButtonPressed(ebiten.MouseButtonLeft) {
@@ -75,18 +75,30 @@ func (g *Game) Update() error {
 
 	// Dynamic input
 	if inpututil.IsMouseButtonJustPressed(ebiten.MouseButtonRight) {
-		g.engine.dynamicAtPosition(mxf, myf)
+		g.engine.dynamicNearestPosition(mxf, myf)
 	}
 	if inpututil.IsMouseButtonJustReleased(ebiten.MouseButtonRight) {
 		g.engine.dynamicRelease(mxf, myf)
 	}
 
-	for i := 0; len(g.engine.circles) < 100 && i < 2; i++ {
+	// larger
+	max := 400
+	for i := 0; len(g.engine.circles) < max && i < 2; i++ {
 		xbuffer := float64(g.width / 4)
 		ybuffer := float64(g.height / 4)
 		xpos := randFloat(xbuffer, float64(g.width)-xbuffer)
 		ypos := randFloat(ybuffer, float64(g.height)-ybuffer)
-		radius := randFloat(5, 50)
+		radius := randRadius(10, 70)
+		circle := NewCircle(xpos, ypos, radius, color.White)
+		g.engine.circles = append(g.engine.circles, circle)
+	}
+	// smaller
+	for i := 0; len(g.engine.circles) < max && i < 2; i++ {
+		xbuffer := float64(g.width / 4)
+		ybuffer := float64(g.height / 4)
+		xpos := randFloat(xbuffer, float64(g.width)-xbuffer)
+		ypos := randFloat(ybuffer, float64(g.height)-ybuffer)
+		radius := randRadius(5, 35)
 		circle := NewCircle(xpos, ypos, radius, color.White)
 		g.engine.circles = append(g.engine.circles, circle)
 	}
@@ -161,7 +173,26 @@ func (g *Game) Draw(screen *ebiten.Image) {
 	)
 	ebitenutil.DebugPrint(screen, msg)
 
+	// g.drawShapeFunction(screen)
+
 	g.drawElapsedTime = time.Now().Sub(start)
+}
+
+func (g *Game) drawShapeFunction(screen *ebiten.Image) {
+	// For visualizing shaping functions (see utils/shape)
+	for ix := 0; ix < g.height; ix++ {
+		// map x 0..1
+		x := float64(ix) / float64(g.height)
+
+		// y in terms of x
+		y := shape(x)
+
+		// translate x and y from 0..1 to 0..screen-height
+		x = x * float64(g.height)
+		y = y * float64(g.height)
+		ebitenutil.DrawRect(screen, x, float64(g.height)-y, 2, 2, color.White)
+	}
+	ebitenutil.DrawRect(screen, float64(g.height), 0, 2, float64(g.height), color.White)
 }
 
 // Layout accepts the window size on desktop as the outside size, and return's
