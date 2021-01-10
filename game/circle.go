@@ -2,6 +2,7 @@ package game
 
 import (
 	"image/color"
+	"math"
 
 	"github.com/hajimehoshi/ebiten/v2"
 )
@@ -62,6 +63,7 @@ func NewCircle(x, y, r float64, color color.Color) *Circle {
 		posX:     x,
 		posY:     y,
 		radius:   r,
+		area:     math.Pi * r * r,
 		image:    img,
 	}
 }
@@ -71,11 +73,14 @@ type Circle struct {
 	selected bool
 	posX     float64
 	posY     float64
+	prevPosX float64
+	prevPosY float64
 	velX     float64
 	velY     float64
 	accX     float64
 	accY     float64
 	radius   float64
+	area     float64
 	image    *ebiten.Image
 }
 

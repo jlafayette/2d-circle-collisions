@@ -75,7 +75,7 @@ func (g *Game) Update() error {
 		g.engine.deselect()
 	}
 
-	for i := 0; len(g.engine.circles) < 2000 && i < 100; i++ {
+	for i := 0; len(g.engine.circles) < 600 && i < 2; i++ {
 		xbuffer := float64(g.width / 4)
 		ybuffer := float64(g.height / 4)
 		xpos := randFloat(xbuffer, float64(g.width)-xbuffer)
@@ -84,7 +84,9 @@ func (g *Game) Update() error {
 		circle := NewCircle(xpos, ypos, radius, color.White)
 		g.engine.circles = append(g.engine.circles, circle)
 	}
-	g.engine.update()
+
+	// TODO: get proper elapsed time
+	g.engine.update(g.width, g.height, 1.0)
 
 	g.updateElapsedTime = time.Now().Sub(start)
 

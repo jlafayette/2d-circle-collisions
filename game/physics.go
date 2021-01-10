@@ -50,6 +50,8 @@ func (e *Engine) moveCircleTo(index int, x, y float64) {
 
 func (e *Engine) deselect() {
 	if e.selectedIndex >= 0 {
+		e.circles[e.selectedIndex].velX = 0
+		e.circles[e.selectedIndex].velY = 0
 		e.circles[e.selectedIndex].selected = false
 	}
 	e.selectedIndex = -1
@@ -65,7 +67,48 @@ func (e *Engine) overlap(i, j int) bool {
 	return math.Abs((x1-x2)*(x1-x2)+(y1-y2)*(y1-y2)) < (r1+r2)*(r1+r2)
 }
 
-func (e *Engine) update() {
+func (e *Engine) update(width, height int, elapsedTime float64) {
+
+	// Update ball positions
+	for i := range e.circles {
+		// apply friction
+		e.circles[i].velX = e.circles[i].velX * 0.97
+		e.circles[i].velY = e.circles[i].velY * 0.97
+
+		// update velocity and position
+		e.circles[i].velX += e.circles[i].accX * elapsedTime
+		e.circles[i].velY += e.circles[i].accY * elapsedTime
+		e.circles[i].posX += e.circles[i].velX * elapsedTime
+		e.circles[i].posY += e.circles[i].velY * elapsedTime
+
+		// wrap around the screen
+		w := float64(width) + 200
+		if e.circles[i].posX < -100.0 {
+			e.circles[i].posX += w
+		}
+		if e.circles[i].posX > w-100.0 {
+			e.circles[i].posX -= w
+		}
+		h := float64(height) + 200
+		if e.circles[i].posY < -100.0 {
+			e.circles[i].posY += h
+		}
+		if e.circles[i].posY > h-100.0 {
+			e.circles[i].posY -= h
+		}
+
+		// is this needed? seems like it's good to not perpetually accelerate
+		e.circles[i].accX = 0
+		e.circles[i].accY = 0
+
+		// clamp low velocity values
+
+		// set previous position
+		e.circles[i].prevPosX = e.circles[i].posX
+		e.circles[i].prevPosY = e.circles[i].posY
+	}
+
+	// Resolve static collisions
 	collided := true
 	maxSteps := 5
 	for step := maxSteps; step > 0 && collided; step-- {
@@ -102,5 +145,15 @@ func (e *Engine) update() {
 				}
 			}
 		}
+	}
+
+	// apply acceleration from static collision displacement
+	for i := range e.circles {
+		// should be proportional to area
+		multiplier := 10.0
+		amountX := ((e.circles[i].posX - e.circles[i].prevPosX) / e.circles[i].radius) * multiplier
+		amountY := ((e.circles[i].posY - e.circles[i].prevPosY) / e.circles[i].radius) * multiplier
+		e.circles[i].accX = amountX
+		e.circles[i].accY = amountY
 	}
 }
