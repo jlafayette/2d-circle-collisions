@@ -142,7 +142,7 @@ type collidingPair struct {
 	b int
 }
 
-func (e *Engine) update(width, height int, elapsedTime float64) {
+func (e *Engine) update(width, height int, speed, elapsedTime float64) {
 
 	// Update ball positions
 	for i := range e.circles {

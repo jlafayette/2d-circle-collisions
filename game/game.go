@@ -1,10 +1,11 @@
 package game
 
 import (
-	"fmt"
 	"image/color"
 	"math"
 	"math/rand"
+	"strconv"
+	"strings"
 	"time"
 
 	"github.com/hajimehoshi/ebiten/v2"
@@ -27,6 +28,9 @@ var (
 type Game struct {
 	width             int
 	height            int
+	showFPS           bool
+	showDebug         bool
+	speedControl      int
 	engine            *Engine
 	updateElapsedTime time.Duration
 	drawElapsedTime   time.Duration
@@ -45,9 +49,12 @@ func NewGame(width, height int) *Game {
 	circles = append(circles, NewCircle(float64(width), float64(height), 25.0, color.White))
 
 	return &Game{
-		width:  width,
-		height: height,
-		engine: NewEngine(circles),
+		width:        width,
+		height:       height,
+		showFPS:      true,
+		showDebug:    true,
+		speedControl: 3,
+		engine:       NewEngine(circles),
 	}
 }
 
@@ -81,34 +88,70 @@ func (g *Game) Update() error {
 		g.engine.dynamicRelease(mxf, myf)
 	}
 
-	// larger
-	max := 400
-	for i := 0; len(g.engine.circles) < max && i < 2; i++ {
-		xbuffer := float64(g.width / 4)
-		ybuffer := float64(g.height / 4)
-		xpos := randFloat(xbuffer, float64(g.width)-xbuffer)
-		ypos := randFloat(ybuffer, float64(g.height)-ybuffer)
-		radius := randRadius(10, 70)
-		circle := NewCircle(xpos, ypos, radius, color.White)
-		g.engine.circles = append(g.engine.circles, circle)
+	// Toggle display of FPS and debug text/lines
+	if inpututil.IsKeyJustPressed(ebiten.KeyD) {
+		g.showDebug = !g.showDebug
 	}
-	// smaller
-	for i := 0; len(g.engine.circles) < max && i < 2; i++ {
-		xbuffer := float64(g.width / 4)
-		ybuffer := float64(g.height / 4)
-		xpos := randFloat(xbuffer, float64(g.width)-xbuffer)
-		ypos := randFloat(ybuffer, float64(g.height)-ybuffer)
-		radius := randRadius(5, 35)
-		circle := NewCircle(xpos, ypos, radius, color.White)
-		g.engine.circles = append(g.engine.circles, circle)
+	if inpututil.IsKeyJustPressed(ebiten.KeyF) {
+		g.showFPS = !g.showFPS
+	}
+
+	// Adjust game speed
+	if inpututil.IsKeyJustPressed(ebiten.KeyComma) {
+		if g.speedControl > 0 {
+			g.speedControl--
+		}
+	}
+	if inpututil.IsKeyJustPressed(ebiten.KeyPeriod) {
+		if g.speedControl < 3 {
+			g.speedControl++
+		}
+	}
+
+	if g.speedControl > 0 {
+		// larger
+		max := 400
+		for i := 0; len(g.engine.circles) < max && i < 2; i++ {
+			xbuffer := float64(g.width / 4)
+			ybuffer := float64(g.height / 4)
+			xpos := randFloat(xbuffer, float64(g.width)-xbuffer)
+			ypos := randFloat(ybuffer, float64(g.height)-ybuffer)
+			radius := randRadius(10, 70)
+			circle := NewCircle(xpos, ypos, radius, color.White)
+			g.engine.circles = append(g.engine.circles, circle)
+		}
+		// smaller
+		for i := 0; len(g.engine.circles) < max && i < 2; i++ {
+			xbuffer := float64(g.width / 4)
+			ybuffer := float64(g.height / 4)
+			xpos := randFloat(xbuffer, float64(g.width)-xbuffer)
+			ypos := randFloat(ybuffer, float64(g.height)-ybuffer)
+			radius := randRadius(5, 35)
+			circle := NewCircle(xpos, ypos, radius, color.White)
+			g.engine.circles = append(g.engine.circles, circle)
+		}
 	}
 
 	// TODO: get proper elapsed time
-	g.engine.update(g.width, g.height, 1.0)
+	g.engine.update(g.width, g.height, g.speed(), 1.0)
 
 	g.updateElapsedTime = time.Now().Sub(start)
 
 	return nil
+}
+
+func (g *Game) speed() float64 {
+	switch g.speedControl {
+	case 0:
+		return 0.0
+	case 1:
+		return 0.333
+	case 2:
+		return 0.667
+	case 3:
+		return 1.0
+	}
+	return 1.0
 }
 
 // Draw is called every frame. The frame frequency depends on the display's
@@ -151,27 +194,40 @@ func (g *Game) Draw(screen *ebiten.Image) {
 		}
 	}
 
-	// Draw red lines between colliding circles
-	for _, p := range g.engine.collidingPairs {
-		ebitenutil.DrawLine(
-			screen,
-			g.engine.circles[p.a].posX,
-			g.engine.circles[p.a].posY,
-			g.engine.circles[p.b].posX,
-			g.engine.circles[p.b].posY,
-			color.RGBA{255, 0, 0, 30},
-		)
-	}
+	// Debug text and lines
+	if g.showFPS || g.showDebug {
+		var msg strings.Builder
+		if g.showFPS {
+			msg.WriteString("FPS: ")
+			msg.WriteString(strconv.FormatFloat(ebiten.CurrentFPS(), 'f', 2, 64))
+			msg.WriteString("\nTPS: ")
+			msg.WriteString(strconv.FormatFloat(ebiten.CurrentTPS(), 'f', 2, 64))
+			msg.WriteString("\n")
+		}
+		if g.showDebug {
+			msg.WriteString("Game speed: ")
+			msg.WriteString(strconv.Itoa(g.speedControl))
+			msg.WriteString("\nCircle count: ")
+			msg.WriteString(strconv.Itoa(len(g.engine.circles)))
+			// msg.WriteString("\nUpdate Elapsed: ")
+			// msg.WriteString(strconv.FormatFloat(g.updateElapsedTime.Seconds(), 'f', 4, 64))
+			// msg.WriteString("\nDraw Elapsed: ")
+			// msg.WriteString(strconv.FormatFloat(g.drawElapsedTime.Seconds(), 'f', 4, 64))
 
-	// Debug text
-	msg := fmt.Sprintf(
-		"FPS: %0.2f\nTPS: %0.2f\nUpdate Elapsed: %0.4f\nDraw Elapsed: %0.4f",
-		ebiten.CurrentFPS(),
-		ebiten.CurrentTPS(),
-		g.updateElapsedTime.Seconds(),
-		g.drawElapsedTime.Seconds(),
-	)
-	ebitenutil.DebugPrint(screen, msg)
+			// Draw red lines between colliding circles
+			for _, p := range g.engine.collidingPairs {
+				ebitenutil.DrawLine(
+					screen,
+					g.engine.circles[p.a].posX,
+					g.engine.circles[p.a].posY,
+					g.engine.circles[p.b].posX,
+					g.engine.circles[p.b].posY,
+					color.RGBA{255, 0, 0, 30},
+				)
+			}
+		}
+		ebitenutil.DebugPrint(screen, msg.String())
+	}
 
 	// g.drawShapeFunction(screen)
 
