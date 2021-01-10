@@ -15,6 +15,7 @@ func NewEngine(circles []*Circle) *Engine {
 // Engine handles collisions
 type Engine struct {
 	selectedIndex  int
+	dynamicIndex   int
 	circles        []*Circle
 	collidingPairs []collidingPair
 }
@@ -23,6 +24,13 @@ func (e *Engine) selectAtPostion(x, y float64) {
 	e.selectedIndex = e.circleAtPosition(x, y)
 	if e.selectedIndex >= 0 {
 		e.circles[e.selectedIndex].selected = true
+	}
+}
+
+func (e *Engine) dynamicAtPosition(x, y float64) {
+	e.dynamicIndex = e.circleAtPosition(x, y)
+	if e.dynamicIndex >= 0 {
+		e.circles[e.dynamicIndex].selected = true
 	}
 }
 
@@ -56,6 +64,23 @@ func (e *Engine) deselect() {
 		e.circles[e.selectedIndex].selected = false
 	}
 	e.selectedIndex = -1
+}
+
+func (e *Engine) dynamicRelease(x, y float64) {
+	if e.dynamicIndex >= 0 {
+		e.circles[e.dynamicIndex].selected = false
+
+		e.circles[e.dynamicIndex].velX = 0.2 * (e.circles[e.dynamicIndex].posX - x)
+		e.circles[e.dynamicIndex].velY = 0.2 * (e.circles[e.dynamicIndex].posY - y)
+	}
+	e.dynamicIndex = -1
+}
+
+func (e *Engine) getDynamicPosition(x, y float64) (float64, float64, bool) {
+	if e.dynamicIndex >= 0 {
+		return e.circles[e.dynamicIndex].posX, e.circles[e.dynamicIndex].posY, true
+	}
+	return 0, 0, false
 }
 
 func (e *Engine) overlap(i, j int) bool {
