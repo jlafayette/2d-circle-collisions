@@ -64,9 +64,9 @@ func (g *Game) Update() error {
 	if inpututil.IsMouseButtonJustPressed(ebiten.MouseButtonLeft) {
 		g.engine.selectAtPostion(mxf, myf)
 	}
-	// Handle dragging selected circle
+	// Handle pulling selected circle
 	if ebiten.IsMouseButtonPressed(ebiten.MouseButtonLeft) {
-		g.engine.moveSelectedTo(mxf, myf)
+		g.engine.applyForceToSelected(mxf, myf)
 	}
 	// Clear selection
 	if inpututil.IsMouseButtonJustReleased(ebiten.MouseButtonLeft) {
@@ -116,6 +116,20 @@ func (g *Game) Draw(screen *ebiten.Image) {
 		mxf := float64(mx)
 		myf := float64(my)
 		x2, y2, found := g.engine.getDynamicPosition(mxf, myf)
+		if found {
+			ebitenutil.DrawLine(
+				screen,
+				mxf, myf, x2, y2,
+				color.RGBA{0, 255, 0, 255},
+			)
+		}
+	}
+	// Draw selected pull line
+	if ebiten.IsMouseButtonPressed(ebiten.MouseButtonLeft) {
+		mx, my := ebiten.CursorPosition()
+		mxf := float64(mx)
+		myf := float64(my)
+		x2, y2, found := g.engine.getSelectedPosition(mxf, myf)
 		if found {
 			ebitenutil.DrawLine(
 				screen,

@@ -57,10 +57,15 @@ func (e *Engine) moveCircleTo(index int, x, y float64) {
 	}
 }
 
+func (e *Engine) applyForceToSelected(x, y float64) {
+	if e.selectedIndex >= 0 {
+		e.circles[e.selectedIndex].accX = 0.03 * (x - e.circles[e.selectedIndex].posX)
+		e.circles[e.selectedIndex].accY = 0.03 * (y - e.circles[e.selectedIndex].posY)
+	}
+}
+
 func (e *Engine) deselect() {
 	if e.selectedIndex >= 0 {
-		e.circles[e.selectedIndex].velX = 0
-		e.circles[e.selectedIndex].velY = 0
 		e.circles[e.selectedIndex].selected = false
 	}
 	e.selectedIndex = -1
@@ -69,11 +74,17 @@ func (e *Engine) deselect() {
 func (e *Engine) dynamicRelease(x, y float64) {
 	if e.dynamicIndex >= 0 {
 		e.circles[e.dynamicIndex].selected = false
-
-		e.circles[e.dynamicIndex].velX = 0.2 * (e.circles[e.dynamicIndex].posX - x)
-		e.circles[e.dynamicIndex].velY = 0.2 * (e.circles[e.dynamicIndex].posY - y)
+		e.circles[e.dynamicIndex].accX = 0.2 * (e.circles[e.dynamicIndex].posX - x)
+		e.circles[e.dynamicIndex].accY = 0.2 * (e.circles[e.dynamicIndex].posY - y)
 	}
 	e.dynamicIndex = -1
+}
+
+func (e *Engine) getSelectedPosition(x, y float64) (float64, float64, bool) {
+	if e.selectedIndex >= 0 {
+		return e.circles[e.selectedIndex].posX, e.circles[e.selectedIndex].posY, true
+	}
+	return 0, 0, false
 }
 
 func (e *Engine) getDynamicPosition(x, y float64) (float64, float64, bool) {
