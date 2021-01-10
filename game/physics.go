@@ -70,8 +70,8 @@ func (e *Engine) update() {
 	maxSteps := 5
 	for step := maxSteps; step > 0 && collided; step-- {
 		collided = false
-		for i := 0; i < len(e.circles); i++ {
-			for j := 0; j < len(e.circles); j++ {
+		for i := range e.circles {
+			for j := range e.circles {
 				if i == j {
 					continue
 				}

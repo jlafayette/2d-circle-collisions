@@ -1,12 +1,14 @@
 package game
 
 import (
+	"fmt"
 	"image/color"
 	"math"
 	"math/rand"
 	"time"
 
 	"github.com/hajimehoshi/ebiten/v2"
+	"github.com/hajimehoshi/ebiten/v2/ebitenutil"
 	"github.com/hajimehoshi/ebiten/v2/inpututil"
 )
 
@@ -23,9 +25,11 @@ var (
 //	Draw
 //	Layout
 type Game struct {
-	width  int
-	height int
-	engine *Engine
+	width             int
+	height            int
+	engine            *Engine
+	updateElapsedTime time.Duration
+	drawElapsedTime   time.Duration
 }
 
 // NewGame creates a new Game
@@ -50,6 +54,8 @@ func NewGame(width, height int) *Game {
 // Update function is called every tick and updates the game's logical state.
 func (g *Game) Update() error {
 
+	start := time.Now()
+
 	mx, my := ebiten.CursorPosition()
 	mxf := float64(mx)
 	myf := float64(my)
@@ -69,7 +75,7 @@ func (g *Game) Update() error {
 		g.engine.deselect()
 	}
 
-	for i := 0; len(g.engine.circles) < 500 && i < 2; i++ {
+	for i := 0; len(g.engine.circles) < 2000 && i < 100; i++ {
 		xbuffer := float64(g.width / 4)
 		ybuffer := float64(g.height / 4)
 		xpos := randFloat(xbuffer, float64(g.width)-xbuffer)
@@ -79,6 +85,9 @@ func (g *Game) Update() error {
 		g.engine.circles = append(g.engine.circles, circle)
 	}
 	g.engine.update()
+
+	g.updateElapsedTime = time.Now().Sub(start)
+
 	return nil
 }
 
@@ -86,10 +95,24 @@ func (g *Game) Update() error {
 // refresh rate, so if the display is 60 Hz, Draw will be called 60 times per
 // second.
 func (g *Game) Draw(screen *ebiten.Image) {
+	start := time.Now()
+
 	screen.Fill(color.Black)
 	for i := range g.engine.circles {
 		g.engine.circles[i].Draw(screen)
 	}
+
+	// Debug text
+	msg := fmt.Sprintf(
+		"FPS: %0.2f\nTPS: %0.2f\nUpdate Elapsed: %0.4f\nDraw Elapsed: %0.4f",
+		ebiten.CurrentFPS(),
+		ebiten.CurrentTPS(),
+		g.updateElapsedTime.Seconds(),
+		g.drawElapsedTime.Seconds(),
+	)
+	ebitenutil.DebugPrint(screen, msg)
+
+	g.drawElapsedTime = time.Now().Sub(start)
 }
 
 // Layout accepts the window size on desktop as the outside size, and return's
