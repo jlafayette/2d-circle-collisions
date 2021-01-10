@@ -102,15 +102,19 @@ func (e *Engine) update(width, height int, elapsedTime float64) {
 
 	// Update ball positions
 	for i := range e.circles {
+
 		// apply friction
-		e.circles[i].velX = e.circles[i].velX * 0.97
-		e.circles[i].velY = e.circles[i].velY * 0.97
+		accX := e.circles[i].accX - (e.circles[i].velX * 0.02)
+		accY := e.circles[i].accY - (e.circles[i].velY * 0.02)
 
 		// update velocity and position
-		e.circles[i].velX += e.circles[i].accX * elapsedTime
-		e.circles[i].velY += e.circles[i].accY * elapsedTime
+		e.circles[i].velX += accX * elapsedTime
+		e.circles[i].velY += accY * elapsedTime
 		e.circles[i].posX += e.circles[i].velX * elapsedTime
 		e.circles[i].posY += e.circles[i].velY * elapsedTime
+
+		e.circles[i].accX = 0.0
+		e.circles[i].accY = 0.0
 
 		// wrap around the screen
 		w := float64(width) + 200
@@ -128,10 +132,6 @@ func (e *Engine) update(width, height int, elapsedTime float64) {
 			e.circles[i].posY -= h
 		}
 
-		// is this needed? seems like it's good to not perpetually accelerate
-		e.circles[i].accX = 0
-		e.circles[i].accY = 0
-
 		// clamp low velocity values
 
 		// set previous position
@@ -142,8 +142,7 @@ func (e *Engine) update(width, height int, elapsedTime float64) {
 	// Resolve static collisions
 	collided := true
 	maxSteps := 5
-	// clear slice but keep capacity
-	e.collidingPairs = e.collidingPairs[:0]
+	e.collidingPairs = e.collidingPairs[:0] // clear slice but keep capacity
 	for step := maxSteps; step > 0 && collided; step-- {
 		collided = false
 		for i := range e.circles {
