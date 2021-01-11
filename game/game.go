@@ -30,7 +30,7 @@ type Game struct {
 	height            int
 	showFPS           bool
 	showDebug         bool
-	speedControl      int
+	speedControl      *SpeedControl
 	engine            *Engine
 	updateElapsedTime time.Duration
 	drawElapsedTime   time.Duration
@@ -47,13 +47,14 @@ func NewGame(width, height int) *Game {
 	// reference circles
 	circles = append(circles, NewCircle(0.0, 0.0, 25.0, color.White))
 	circles = append(circles, NewCircle(float64(width), float64(height), 25.0, color.White))
+	circles = append(circles, NewCircle(float64(width)/2, float64(height)/2, 200.0, color.White))
 
 	return &Game{
 		width:        width,
 		height:       height,
 		showFPS:      true,
 		showDebug:    true,
-		speedControl: 3,
+		speedControl: NewSpeedControl(),
 		engine:       NewEngine(circles),
 	}
 }
@@ -73,7 +74,7 @@ func (g *Game) Update() error {
 	}
 	// Handle pulling selected circle
 	if ebiten.IsMouseButtonPressed(ebiten.MouseButtonLeft) {
-		g.engine.applyForceToSelected(mxf, myf)
+		g.engine.applyForceToSelected(mxf, myf, g.speedControl.multiplier())
 	}
 	// Clear selection
 	if inpututil.IsMouseButtonJustReleased(ebiten.MouseButtonLeft) {
@@ -96,22 +97,13 @@ func (g *Game) Update() error {
 		g.showFPS = !g.showFPS
 	}
 
-	// Adjust game speed
-	if inpututil.IsKeyJustPressed(ebiten.KeyComma) {
-		if g.speedControl > 0 {
-			g.speedControl--
-		}
-	}
-	if inpututil.IsKeyJustPressed(ebiten.KeyPeriod) {
-		if g.speedControl < 3 {
-			g.speedControl++
-		}
-	}
+	// Handle speed control keyboard inputs
+	g.speedControl.update()
 
-	if g.speedControl > 0 {
+	if !g.speedControl.paused() {
 		// larger
-		max := 400
-		for i := 0; len(g.engine.circles) < max && i < 2; i++ {
+		max := 100
+		for i := 0; len(g.engine.circles) < max && i < 1; i++ {
 			xbuffer := float64(g.width / 4)
 			ybuffer := float64(g.height / 4)
 			xpos := randFloat(xbuffer, float64(g.width)-xbuffer)
@@ -121,7 +113,7 @@ func (g *Game) Update() error {
 			g.engine.circles = append(g.engine.circles, circle)
 		}
 		// smaller
-		for i := 0; len(g.engine.circles) < max && i < 2; i++ {
+		for i := 0; len(g.engine.circles) < max && i < 3; i++ {
 			xbuffer := float64(g.width / 4)
 			ybuffer := float64(g.height / 4)
 			xpos := randFloat(xbuffer, float64(g.width)-xbuffer)
@@ -133,25 +125,12 @@ func (g *Game) Update() error {
 	}
 
 	// TODO: get proper elapsed time
-	g.engine.update(g.width, g.height, g.speed(), 1.0)
+	elapsedTime := 1.0
+	g.engine.update(g.width, g.height, g.speedControl.multiplier(), elapsedTime)
 
 	g.updateElapsedTime = time.Now().Sub(start)
 
 	return nil
-}
-
-func (g *Game) speed() float64 {
-	switch g.speedControl {
-	case 0:
-		return 0.0
-	case 1:
-		return 0.333
-	case 2:
-		return 0.667
-	case 3:
-		return 1.0
-	}
-	return 1.0
 }
 
 // Draw is called every frame. The frame frequency depends on the display's
@@ -206,9 +185,11 @@ func (g *Game) Draw(screen *ebiten.Image) {
 		}
 		if g.showDebug {
 			msg.WriteString("Game speed: ")
-			msg.WriteString(strconv.Itoa(g.speedControl))
+			msg.WriteString(strconv.Itoa(g.speedControl.control))
 			msg.WriteString("\nCircle count: ")
 			msg.WriteString(strconv.Itoa(len(g.engine.circles)))
+			msg.WriteString("\nChecks: ")
+			msg.WriteString(strconv.Itoa(g.engine.checks))
 			// msg.WriteString("\nUpdate Elapsed: ")
 			// msg.WriteString(strconv.FormatFloat(g.updateElapsedTime.Seconds(), 'f', 4, 64))
 			// msg.WriteString("\nDraw Elapsed: ")
