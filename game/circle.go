@@ -7,14 +7,14 @@ import (
 	"github.com/hajimehoshi/ebiten/v2"
 )
 
-// var (
-// 	selectedColor = color.RGBA{0, 100, 255, 255}
-// 	collidedColor = color.RGBA{255, 0, 0, 255}
-// 	defaultColor  = color.RGBA{200, 200, 200, 255}
-// )
-
 // Bresenham algorithm for rasterizing a circle
 // Draw a circle that fills given image
+// Before drawing, ensure that the image has odd width and height for best
+// results:
+//   if width%2 == 0 {
+//     width++
+//     height = width
+//   }
 func bresenham(color color.Color, img *ebiten.Image) {
 	width, height := img.Size()
 	x := width / 2
@@ -46,17 +46,29 @@ func bresenham(color color.Color, img *ebiten.Image) {
 	}
 }
 
-// NewCircle creates a new circle at position x,y with radius r
-func NewCircle(x, y, r float64, color color.Color) *Circle {
-
-	var width = int(r) * 2
-	var height = width
-	if width%2 == 0 {
-		width++
-		height = width
+// Use shader to draw a circle
+func drawCircleToImage(img *ebiten.Image, shader *ebiten.Shader) {
+	w, h := img.Size()
+	x := 0.0
+	y := 0.0
+	op := &ebiten.DrawRectShaderOptions{}
+	op.GeoM.Translate(float64(x), float64(y))
+	op.Uniforms = map[string]interface{}{
+		"Translate": []float32{float32(x), float32(y)},
+		"Size":      []float32{float32(w), float32(h)},
 	}
+	img.DrawRectShader(w, h, shader, op)
+}
+
+// NewCircle creates a new circle at position x,y with radius r
+func NewCircle(x, y, r float64, color color.Color, shader *ebiten.Shader) *Circle {
+
+	var width = int(r)*2 + 3
+	var height = width
+
 	img := ebiten.NewImage(width, height)
-	bresenham(color, img)
+
+	drawCircleToImage(img, shader)
 
 	return &Circle{
 		selected: false,

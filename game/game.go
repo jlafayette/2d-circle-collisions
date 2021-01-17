@@ -2,6 +2,7 @@ package game
 
 import (
 	"image/color"
+	"log"
 	"math"
 	"math/rand"
 	"strconv"
@@ -11,6 +12,7 @@ import (
 	"github.com/hajimehoshi/ebiten/v2"
 	"github.com/hajimehoshi/ebiten/v2/ebitenutil"
 	"github.com/hajimehoshi/ebiten/v2/inpututil"
+	"github.com/jlafayette/collisions/resources/shader"
 )
 
 var (
@@ -28,10 +30,12 @@ var (
 type Game struct {
 	width             int
 	height            int
+	time              int
 	showFPS           bool
 	showDebug         bool
 	speedControl      *SpeedControl
 	engine            *Engine
+	circleShader      *ebiten.Shader
 	updateElapsedTime time.Duration
 	drawElapsedTime   time.Duration
 }
@@ -42,12 +46,17 @@ func NewGame(width, height int) *Game {
 	seed := time.Now().UnixNano()
 	rand.Seed(seed)
 
+	sh, err := ebiten.NewShader(shader.Circle)
+	if err != nil {
+		log.Fatal("Circle shader failed: ", err)
+	}
+
 	var circles []*Circle
 
 	// reference circles
-	circles = append(circles, NewCircle(0.0, 0.0, 25.0, color.White))
-	circles = append(circles, NewCircle(float64(width), float64(height), 25.0, color.White))
-	circles = append(circles, NewCircle(float64(width)/2, float64(height)/2, 200.0, color.White))
+	circles = append(circles, NewCircle(0.0, 0.0, 25.0, color.White, sh))
+	circles = append(circles, NewCircle(float64(width), float64(height), 25.0, color.White, sh))
+	circles = append(circles, NewCircle(float64(width)/2, float64(height)/2, 200.0, color.White, sh))
 
 	return &Game{
 		width:        width,
@@ -56,11 +65,13 @@ func NewGame(width, height int) *Game {
 		showDebug:    true,
 		speedControl: NewSpeedControl(),
 		engine:       NewEngine(circles),
+		circleShader: sh,
 	}
 }
 
 // Update function is called every tick and updates the game's logical state.
 func (g *Game) Update() error {
+	g.time++
 
 	start := time.Now()
 
@@ -102,14 +113,14 @@ func (g *Game) Update() error {
 
 	if !g.speedControl.paused() {
 		// larger
-		max := 100
+		max := 450
 		for i := 0; len(g.engine.circles) < max && i < 1; i++ {
 			xbuffer := float64(g.width / 4)
 			ybuffer := float64(g.height / 4)
 			xpos := randFloat(xbuffer, float64(g.width)-xbuffer)
 			ypos := randFloat(ybuffer, float64(g.height)-ybuffer)
 			radius := randRadius(10, 70)
-			circle := NewCircle(xpos, ypos, radius, color.White)
+			circle := NewCircle(xpos, ypos, radius, color.White, g.circleShader)
 			g.engine.circles = append(g.engine.circles, circle)
 		}
 		// smaller
@@ -119,7 +130,7 @@ func (g *Game) Update() error {
 			xpos := randFloat(xbuffer, float64(g.width)-xbuffer)
 			ypos := randFloat(ybuffer, float64(g.height)-ybuffer)
 			radius := randRadius(5, 35)
-			circle := NewCircle(xpos, ypos, radius, color.White)
+			circle := NewCircle(xpos, ypos, radius, color.White, g.circleShader)
 			g.engine.circles = append(g.engine.circles, circle)
 		}
 	}
@@ -209,10 +220,40 @@ func (g *Game) Draw(screen *ebiten.Image) {
 		}
 		ebitenutil.DebugPrint(screen, msg.String())
 	}
-
-	// g.drawShapeFunction(screen)
-
 	g.drawElapsedTime = time.Now().Sub(start)
+}
+
+// Draw2 for testing shader
+func (g *Game) Draw2(screen *ebiten.Image) {
+	screen.Fill(color.RGBA{128, 128, 128, 255})
+
+	g.drawShader(g.width, 0, 0, screen)
+	if g.showDebug {
+		ebitenutil.DrawRect(screen, 300-1, 200-1, 200+2, 200+2, color.Black)
+	}
+	g.drawShader(200, 300, 200, screen)
+}
+
+func (g *Game) drawShader(size, x, y int, screen *ebiten.Image) {
+
+	w, h := screen.Size()
+	cx, cy := ebiten.CursorPosition()
+
+	op := &ebiten.DrawRectShaderOptions{}
+	op.GeoM.Translate(float64(x), float64(y))
+	op.Uniforms = map[string]interface{}{
+		"Time":       float32(g.time) / 60,
+		"Cursor":     []float32{float32(cx), float32(cy)},
+		"ScreenSize": []float32{float32(w), float32(h)},
+		"Translate":  []float32{float32(x), float32(y)},
+		"Size":       []float32{float32(size), float32(size)},
+	}
+	// op.Images = [4]*ebiten.Image{
+	// 	g.ShapeMap,
+	// 	g.Texture,
+	// },
+
+	screen.DrawRectShader(size, size, g.circleShader, op)
 }
 
 func (g *Game) drawShapeFunction(screen *ebiten.Image) {

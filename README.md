@@ -15,3 +15,9 @@ wasmserve .
 ```
 
 Open `http://localhost:8080/` on your browser.
+
+## Rebuild shaders
+
+```sh
+go generate resources/shader/generate.go
+```
