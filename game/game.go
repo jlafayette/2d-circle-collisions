@@ -52,11 +52,15 @@ func NewGame(width, height int) *Game {
 	}
 
 	var circles []*Circle
-
-	// reference circles
-	circles = append(circles, NewCircle(0.0, 0.0, 25.0, color.White, sh))
-	circles = append(circles, NewCircle(float64(width), float64(height), 25.0, color.White, sh))
 	circles = append(circles, NewCircle(float64(width)/2, float64(height)/2, 200.0, color.White, sh))
+
+	var capsules []*Capsule
+	w := float64(width) - 5
+	h := float64(height) - 5
+	capsules = append(capsules, NewCapsule(5, 5, w, 5, 10))
+	capsules = append(capsules, NewCapsule(5, 5, 5, h, 10))
+	capsules = append(capsules, NewCapsule(w, h, w, 5, 10))
+	capsules = append(capsules, NewCapsule(w, h, 5, h, 10))
 
 	return &Game{
 		width:        width,
@@ -64,7 +68,7 @@ func NewGame(width, height int) *Game {
 		showFPS:      true,
 		showDebug:    true,
 		speedControl: NewSpeedControl(),
-		engine:       NewEngine(circles),
+		engine:       NewEngine(circles, capsules),
 		circleShader: sh,
 	}
 }
@@ -153,6 +157,9 @@ func (g *Game) Draw(screen *ebiten.Image) {
 	screen.Fill(color.Black)
 	for i := range g.engine.circles {
 		g.engine.circles[i].Draw(screen)
+	}
+	for i := range g.engine.capsules {
+		g.engine.capsules[i].Draw(screen)
 	}
 
 	// Draw dynamic input line

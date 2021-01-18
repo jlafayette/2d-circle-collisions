@@ -10,25 +10,21 @@ func Fragment(position vec4, texCoord vec2, color vec4) vec4 {
 	// vec2 st = gl_FragCoord.xy/u_resolution;
 	st := (position.xy / Size) - (Translate / Size)
 
-	pixel := 1.0 / Size.x
-
 	// The DISTANCE from the pixel to the center
-	d := distance(st, vec2(0.5))
+	dist := distance(st, vec2(0.5))
 
-	r := 0.5 - pixel
+	// Make circle edge 1 pixel away from the edges of the image to avoid
+	// clipping
+	pixel := 1.0 / Size.x
+	radius := 0.5 - pixel
 
-	// // falloff
-	// // 0.01 for large (r>=100.0)
-	// // 0.1 for small (r=5.0)
-	// low1 := 5.0
-	// high1 := 100.0
-	// low2 := 0.9
-	// high2 := 0.99
-	// f := clamp(Size.x, low1, high1)
-	// f = low2 + (f-low1)*(high2-low2)/(high1-low1)
-	// f = 1 - f
-	f := pixel
+	// falloff of 1 pixel
+	falloff := pixel
 
-	c := smoothstep(r, r-f, d)
-	return vec4(c)
+	clr := smoothstep(radius, radius-falloff, dist)
+
+	// Uncomment this line to create an outline instead of a filled circle
+	// clr = clr * smoothstep(radius-(falloff*2.0), radius-falloff, dist)
+
+	return vec4(clr)
 }

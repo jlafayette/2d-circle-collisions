@@ -5,20 +5,23 @@ import (
 )
 
 // NewEngine initializes a new physics engine
-func NewEngine(circles []*Circle) *Engine {
+func NewEngine(circles []*Circle, capsules []*Capsule) *Engine {
 	return &Engine{
 		selectedIndex: -1,
 		circles:       circles,
+		capsules:      capsules,
 	}
 }
 
 // Engine handles collisions
 type Engine struct {
-	selectedIndex  int
-	dynamicIndex   int
-	checks         int
-	circles        []*Circle
-	collidingPairs []collidingPair
+	selectedIndex     int
+	dynamicIndex      int
+	checks            int
+	circles           []*Circle
+	capsules          []*Capsule
+	collidingPairs    []collidingPair
+	collidingCapsules []collidingCapsule
 }
 
 func (e *Engine) selectAtPostion(x, y float64) {
@@ -143,6 +146,14 @@ type collidingPair struct {
 	b int
 }
 
+type collidingCapsule struct {
+	i int
+	x float64
+	y float64
+	r float64
+	d float64
+}
+
 func (e *Engine) update(width, height int, speed, elapsedTime float64) {
 	e.checks = 0
 	steps := 5
@@ -181,21 +192,21 @@ func (e *Engine) updateCirclePositions(width, height int, speed, elapsedTime flo
 		e.circles[i].accX = 0.0
 		e.circles[i].accY = 0.0
 
-		// wrap around the screen
-		w := float64(width) + 200
-		if e.circles[i].posX < -100.0 {
-			e.circles[i].posX += w
-		}
-		if e.circles[i].posX > w-100.0 {
-			e.circles[i].posX -= w
-		}
-		h := float64(height) + 200
-		if e.circles[i].posY < -100.0 {
-			e.circles[i].posY += h
-		}
-		if e.circles[i].posY > h-100.0 {
-			e.circles[i].posY -= h
-		}
+		// // wrap around the screen
+		// w := float64(width) + 200
+		// if e.circles[i].posX < -100.0 {
+		// 	e.circles[i].posX += w
+		// }
+		// if e.circles[i].posX > w-100.0 {
+		// 	e.circles[i].posX -= w
+		// }
+		// h := float64(height) + 200
+		// if e.circles[i].posY < -100.0 {
+		// 	e.circles[i].posY += h
+		// }
+		// if e.circles[i].posY > h-100.0 {
+		// 	e.circles[i].posY -= h
+		// }
 
 		// clamp low velocity values
 
@@ -207,7 +218,8 @@ func (e *Engine) updateCirclePositions(width, height int, speed, elapsedTime flo
 
 func (e *Engine) resolveStaticCollisions() {
 	// Resolve static collisions
-	e.collidingPairs = e.collidingPairs[:0] // clear slice but keep capacity
+	e.collidingPairs = e.collidingPairs[:0]       // clear slice but keep capacity
+	e.collidingCapsules = e.collidingCapsules[:0] // clear slice but keep capacity
 
 	for i := range e.circles {
 		for j := range e.circles {
@@ -248,11 +260,92 @@ func (e *Engine) resolveStaticCollisions() {
 				}
 			}
 		}
+		// line collisions
+		for j := range e.capsules {
+			lx1 := e.capsules[j].x1
+			ly1 := e.capsules[j].y1
+			lx2 := e.capsules[j].x2
+			ly2 := e.capsules[j].y2
+			lr := e.capsules[j].radius
+			cx := e.circles[i].posX
+			cy := e.circles[i].posY
+			cr := e.circles[i].radius
+			// Line vector
+			lineX1 := lx2 - lx1
+			lineY1 := ly2 - ly1
+			// Vector from circle to start of the line
+			lineX2 := cx - lx1
+			lineY2 := cy - ly1
+
+			lineLen := lineX1*lineX1 + lineY1*lineY1
+
+			// t represents the closest point on the line segment, normalized between 0 and 1
+			// where zero is the start, and one is end of the line.
+			t := math.Max(0, math.Min(lineLen, (lineX1*lineX2+lineY1*lineY2))) / lineLen
+
+			// Closest point
+			closestPointX := lx1 + t*lineX1
+			closestPointY := ly1 + t*lineY1
+
+			// Distance betwen closest point and circle center
+			dist := math.Sqrt((cx-closestPointX)*(cx-closestPointX) + (cy-closestPointY)*(cy-closestPointY))
+
+			// Check for collision
+			if dist <= (cr + lr) {
+				e.collidingCapsules = append(
+					e.collidingCapsules,
+					collidingCapsule{i, closestPointX, closestPointY, lr, dist},
+				)
+
+				// Calculate displacement required
+				amount := dist - cr - lr
+
+				// displace circle away from collision
+				distanceM := 1.0 / dist // Can be used to multiply instead of divide by dist
+				e.circles[i].posX -= amount * (cx - closestPointX) * distanceM
+				e.circles[i].posY -= amount * (cy - closestPointY) * distanceM
+
+				// TODO: Add ball and line pair to dynamic collisions
+			}
+		}
 	}
 }
 
 func (e *Engine) resolveDynamicCollisions() {
 	// dynamic collisions
+	for _, cap := range e.collidingCapsules {
+		px1 := e.circles[cap.i].posX
+		py1 := e.circles[cap.i].posY
+		vx1 := e.circles[cap.i].velX
+		vy1 := e.circles[cap.i].velY
+		a1 := e.circles[cap.i].area
+		px2 := cap.x
+		py2 := cap.y
+		vx2 := -vx1
+		vy2 := -vy1
+		a2 := a1
+
+		// Distance between balls
+		distance := math.Sqrt((px1-px2)*(px1-px2) + (py1-py2)*(py1-py2))
+
+		// Normal
+		nx := (px2 - px1) / distance
+		ny := (py2 - py1) / distance
+
+		// Calculate new velocities from elastic collision
+		// https://en.wikipedia.org/wiki/Elastic_collision
+		kx := vx1 - vx2
+		ky := vy1 - vy2
+		p := 2.0 * (nx*kx + ny*ky) / (a1 + a2)
+		e.circles[cap.i].velX = vx1 - p*a2*nx
+		e.circles[cap.i].velY = vy1 - p*a2*ny
+		// e.circles[pair.b].velX = vx2 + p*a1*nx
+		// e.circles[pair.b].velY = vy2 + p*a1*ny
+
+		// // r=d−2(d⋅n)n
+		// // where d⋅n is the dot product, and n must be normalized.
+	}
+
 	for _, pair := range e.collidingPairs {
 		px1 := e.circles[pair.a].posX
 		py1 := e.circles[pair.a].posY
