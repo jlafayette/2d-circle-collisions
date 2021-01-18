@@ -24,42 +24,42 @@ type Engine struct {
 	collidingCapsules []collidingCapsule
 }
 
-func (e *Engine) selectAtPostion(x, y float64) {
-	e.selectedIndex = e.circleAtPosition(x, y)
+func (e *Engine) selectAtPostion(pos Vec2) {
+	e.selectedIndex = e.circleAtPosition(pos)
 	if e.selectedIndex >= 0 {
 		e.circles[e.selectedIndex].selected = true
 	}
 }
 
-func (e *Engine) dynamicAtPosition(x, y float64) {
-	e.dynamicIndex = e.circleAtPosition(x, y)
+func (e *Engine) dynamicAtPosition(pos Vec2) {
+	e.dynamicIndex = e.circleAtPosition(pos)
 	if e.dynamicIndex >= 0 {
 		e.circles[e.dynamicIndex].selected = true
 	}
 }
 
-func (e *Engine) selectNearestPostion(x, y float64) {
-	e.selectedIndex = e.circleNearestPosition(x, y)
+func (e *Engine) selectNearestPostion(pos Vec2) {
+	e.selectedIndex = e.circleNearestPosition(pos)
 	if e.selectedIndex >= 0 {
 		e.circles[e.selectedIndex].selected = true
 	}
 }
 
-func (e *Engine) dynamicNearestPosition(x, y float64) {
-	e.dynamicIndex = e.circleNearestPosition(x, y)
+func (e *Engine) dynamicNearestPosition(pos Vec2) {
+	e.dynamicIndex = e.circleNearestPosition(pos)
 	if e.dynamicIndex >= 0 {
 		e.circles[e.dynamicIndex].selected = true
 	}
 }
 
-func (e *Engine) circleNearestPosition(x, y float64) int {
+func (e *Engine) circleNearestPosition(pos Vec2) int {
 	minDistance := math.MaxFloat64
 	closest := -1
 	for i := range e.circles {
-		cx := e.circles[i].posX
-		cy := e.circles[i].posY
+		cx := e.circles[i].pos.X
+		cy := e.circles[i].pos.Y
 		cr := e.circles[i].radius
-		d := math.Abs((cx-x)*(cx-x) + (cy-y)*(cy-y))
+		d := math.Abs((cx-pos.X)*(cx-pos.X) + (cy-pos.Y)*(cy-pos.Y))
 		if d < (cr * cr) {
 			return i
 		}
@@ -71,33 +71,32 @@ func (e *Engine) circleNearestPosition(x, y float64) int {
 	return closest
 }
 
-func (e *Engine) circleAtPosition(x, y float64) int {
+func (e *Engine) circleAtPosition(pos Vec2) int {
 	for i := range e.circles {
-		cx := e.circles[i].posX
-		cy := e.circles[i].posY
+		cx := e.circles[i].pos.X
+		cy := e.circles[i].pos.Y
 		cr := e.circles[i].radius
-		if math.Abs((cx-x)*(cx-x)+(cy-y)*(cy-y)) < (cr * cr) {
+		if math.Abs((cx-pos.X)*(cx-pos.X)+(cy-pos.Y)*(cy-pos.Y)) < (cr * cr) {
 			return i
 		}
 	}
 	return -1
 }
 
-func (e *Engine) moveSelectedTo(x, y float64) {
-	e.moveCircleTo(e.selectedIndex, x, y)
+func (e *Engine) moveSelectedTo(pos Vec2) {
+	e.moveCircleTo(e.selectedIndex, pos)
 }
 
-func (e *Engine) moveCircleTo(index int, x, y float64) {
+func (e *Engine) moveCircleTo(index int, pos Vec2) {
 	if index >= 0 && index < len(e.circles) {
-		e.circles[index].posX = x
-		e.circles[index].posY = y
+		e.circles[index].pos = pos
 	}
 }
 
-func (e *Engine) applyForceToSelected(x, y, speed float64) {
+func (e *Engine) applyForceToSelected(pos Vec2, speed float64) {
 	if e.selectedIndex >= 0 {
-		e.circles[e.selectedIndex].accX = (0.03 * (x - e.circles[e.selectedIndex].posX)) * speed
-		e.circles[e.selectedIndex].accY = (0.03 * (y - e.circles[e.selectedIndex].posY)) * speed
+		e.circles[e.selectedIndex].acc.X = (0.03 * (pos.X - e.circles[e.selectedIndex].pos.X)) * speed
+		e.circles[e.selectedIndex].acc.Y = (0.03 * (pos.Y - e.circles[e.selectedIndex].pos.Y)) * speed
 	}
 }
 
@@ -108,35 +107,35 @@ func (e *Engine) deselect() {
 	e.selectedIndex = -1
 }
 
-func (e *Engine) dynamicRelease(x, y float64) {
+func (e *Engine) dynamicRelease(pos Vec2) {
 	if e.dynamicIndex >= 0 {
 		e.circles[e.dynamicIndex].selected = false
-		e.circles[e.dynamicIndex].accX = 0.2 * (e.circles[e.dynamicIndex].posX - x)
-		e.circles[e.dynamicIndex].accY = 0.2 * (e.circles[e.dynamicIndex].posY - y)
+		e.circles[e.dynamicIndex].acc.X = 0.2 * (e.circles[e.dynamicIndex].pos.X - pos.X)
+		e.circles[e.dynamicIndex].acc.Y = 0.2 * (e.circles[e.dynamicIndex].pos.Y - pos.Y)
 	}
 	e.dynamicIndex = -1
 }
 
-func (e *Engine) getSelectedPosition(x, y float64) (float64, float64, bool) {
+func (e *Engine) getSelectedPosition() (Vec2, bool) {
 	if e.selectedIndex >= 0 {
-		return e.circles[e.selectedIndex].posX, e.circles[e.selectedIndex].posY, true
+		return e.circles[e.selectedIndex].pos, true
 	}
-	return 0, 0, false
+	return Vec2{0, 0}, false
 }
 
-func (e *Engine) getDynamicPosition(x, y float64) (float64, float64, bool) {
+func (e *Engine) getDynamicPosition() (Vec2, bool) {
 	if e.dynamicIndex >= 0 {
-		return e.circles[e.dynamicIndex].posX, e.circles[e.dynamicIndex].posY, true
+		return e.circles[e.dynamicIndex].pos, true
 	}
-	return 0, 0, false
+	return Vec2{0, 0}, false
 }
 
 func (e *Engine) overlap(i, j int) bool {
-	x1 := e.circles[i].posX
-	y1 := e.circles[i].posY
+	x1 := e.circles[i].pos.X
+	y1 := e.circles[i].pos.Y
 	r1 := e.circles[i].radius
-	x2 := e.circles[j].posX
-	y2 := e.circles[j].posY
+	x2 := e.circles[j].pos.X
+	y2 := e.circles[j].pos.Y
 	r2 := e.circles[j].radius
 	return math.Abs((x1-x2)*(x1-x2)+(y1-y2)*(y1-y2)) < (r1+r2)*(r1+r2)
 }
@@ -180,17 +179,17 @@ func (e *Engine) updateCirclePositions(width, height int, speed, elapsedTime flo
 	for i := range e.circles {
 
 		// apply friction
-		accX := e.circles[i].accX - (e.circles[i].velX * 0.02 * speed)
-		accY := e.circles[i].accY - (e.circles[i].velY * 0.02 * speed)
+		accX := e.circles[i].acc.X - (e.circles[i].vel.X * 0.02 * speed)
+		accY := e.circles[i].acc.Y - (e.circles[i].vel.Y * 0.02 * speed)
 
 		// update velocity and position
-		e.circles[i].velX += accX
-		e.circles[i].velY += accY
-		e.circles[i].posX += e.circles[i].velX * elapsedTime * speed
-		e.circles[i].posY += e.circles[i].velY * elapsedTime * speed
+		e.circles[i].vel.X += accX
+		e.circles[i].vel.Y += accY
+		e.circles[i].pos.X += e.circles[i].vel.X * elapsedTime * speed
+		e.circles[i].pos.Y += e.circles[i].vel.Y * elapsedTime * speed
 
-		e.circles[i].accX = 0.0
-		e.circles[i].accY = 0.0
+		e.circles[i].acc.X = 0.0
+		e.circles[i].acc.Y = 0.0
 
 		// // wrap around the screen
 		// w := float64(width) + 200
@@ -211,8 +210,8 @@ func (e *Engine) updateCirclePositions(width, height int, speed, elapsedTime flo
 		// clamp low velocity values
 
 		// set previous position
-		e.circles[i].prevPosX = e.circles[i].posX
-		e.circles[i].prevPosY = e.circles[i].posY
+		e.circles[i].prevPos.X = e.circles[i].pos.X
+		e.circles[i].prevPos.Y = e.circles[i].pos.Y
 	}
 }
 
@@ -230,19 +229,19 @@ func (e *Engine) resolveStaticCollisions() {
 			if e.overlap(i, j) {
 				e.collidingPairs = append(e.collidingPairs, collidingPair{i, j})
 				// distance between ball centers
-				x1 := e.circles[i].posX
-				y1 := e.circles[i].posY
+				x1 := e.circles[i].pos.X
+				y1 := e.circles[i].pos.Y
 				r1 := e.circles[i].radius
-				x2 := e.circles[j].posX
-				y2 := e.circles[j].posY
+				x2 := e.circles[j].pos.X
+				y2 := e.circles[j].pos.Y
 				r2 := e.circles[j].radius
 				distance := math.Sqrt((x1-x2)*(x1-x2) + (y1-y2)*(y1-y2))
 				distanceM := (1.0 / distance)
 				if i == e.selectedIndex {
 					// displace target circle away from collision
 					amount := distance - r1 - r2
-					e.circles[j].posX += amount * (x1 - x2) * distanceM
-					e.circles[j].posY += amount * (y1 - y2) * distanceM
+					e.circles[j].pos.X += amount * (x1 - x2) * distanceM
+					e.circles[j].pos.Y += amount * (y1 - y2) * distanceM
 				} else {
 					// Make displace amount depend on area
 					totalAmount := distance - r1 - r2
@@ -252,11 +251,11 @@ func (e *Engine) resolveStaticCollisions() {
 					amount1 := totalAmount * a2 * areaSumM
 					amount2 := totalAmount * a1 * areaSumM
 					// displace current circle away from the collision
-					e.circles[i].posX -= amount1 * (x1 - x2) * distanceM
-					e.circles[i].posY -= amount1 * (y1 - y2) * distanceM
+					e.circles[i].pos.X -= amount1 * (x1 - x2) * distanceM
+					e.circles[i].pos.Y -= amount1 * (y1 - y2) * distanceM
 					// displace target circle away from collision
-					e.circles[j].posX += amount2 * (x1 - x2) * distanceM
-					e.circles[j].posY += amount2 * (y1 - y2) * distanceM
+					e.circles[j].pos.X += amount2 * (x1 - x2) * distanceM
+					e.circles[j].pos.Y += amount2 * (y1 - y2) * distanceM
 				}
 			}
 		}
@@ -267,8 +266,8 @@ func (e *Engine) resolveStaticCollisions() {
 			lx2 := e.capsules[j].x2
 			ly2 := e.capsules[j].y2
 			lr := e.capsules[j].radius
-			cx := e.circles[i].posX
-			cy := e.circles[i].posY
+			cx := e.circles[i].pos.X
+			cy := e.circles[i].pos.Y
 			cr := e.circles[i].radius
 			// Line vector
 			lineX1 := lx2 - lx1
@@ -302,8 +301,8 @@ func (e *Engine) resolveStaticCollisions() {
 
 				// displace circle away from collision
 				distanceM := 1.0 / dist // Can be used to multiply instead of divide by dist
-				e.circles[i].posX -= amount * (cx - closestPointX) * distanceM
-				e.circles[i].posY -= amount * (cy - closestPointY) * distanceM
+				e.circles[i].pos.X -= amount * (cx - closestPointX) * distanceM
+				e.circles[i].pos.Y -= amount * (cy - closestPointY) * distanceM
 
 				// TODO: Add ball and line pair to dynamic collisions
 			}
@@ -314,10 +313,10 @@ func (e *Engine) resolveStaticCollisions() {
 func (e *Engine) resolveDynamicCollisions() {
 	// dynamic collisions
 	for _, cap := range e.collidingCapsules {
-		px1 := e.circles[cap.i].posX
-		py1 := e.circles[cap.i].posY
-		vx1 := e.circles[cap.i].velX
-		vy1 := e.circles[cap.i].velY
+		px1 := e.circles[cap.i].pos.X
+		py1 := e.circles[cap.i].pos.Y
+		vx1 := e.circles[cap.i].vel.X
+		vy1 := e.circles[cap.i].vel.Y
 		a1 := e.circles[cap.i].area
 		px2 := cap.x
 		py2 := cap.y
@@ -337,8 +336,8 @@ func (e *Engine) resolveDynamicCollisions() {
 		kx := vx1 - vx2
 		ky := vy1 - vy2
 		p := 2.0 * (nx*kx + ny*ky) / (a1 + a2)
-		e.circles[cap.i].velX = vx1 - p*a2*nx
-		e.circles[cap.i].velY = vy1 - p*a2*ny
+		e.circles[cap.i].vel.X = vx1 - p*a2*nx
+		e.circles[cap.i].vel.Y = vy1 - p*a2*ny
 		// e.circles[pair.b].velX = vx2 + p*a1*nx
 		// e.circles[pair.b].velY = vy2 + p*a1*ny
 
@@ -347,15 +346,15 @@ func (e *Engine) resolveDynamicCollisions() {
 	}
 
 	for _, pair := range e.collidingPairs {
-		px1 := e.circles[pair.a].posX
-		py1 := e.circles[pair.a].posY
-		vx1 := e.circles[pair.a].velX
-		vy1 := e.circles[pair.a].velY
+		px1 := e.circles[pair.a].pos.X
+		py1 := e.circles[pair.a].pos.Y
+		vx1 := e.circles[pair.a].vel.X
+		vy1 := e.circles[pair.a].vel.Y
 		a1 := e.circles[pair.a].area
-		px2 := e.circles[pair.b].posX
-		py2 := e.circles[pair.b].posY
-		vx2 := e.circles[pair.b].velX
-		vy2 := e.circles[pair.b].velY
+		px2 := e.circles[pair.b].pos.X
+		py2 := e.circles[pair.b].pos.Y
+		vx2 := e.circles[pair.b].vel.X
+		vy2 := e.circles[pair.b].vel.Y
 		a2 := e.circles[pair.b].area
 
 		// Distance between balls
@@ -370,9 +369,9 @@ func (e *Engine) resolveDynamicCollisions() {
 		kx := vx1 - vx2
 		ky := vy1 - vy2
 		p := 2.0 * (nx*kx + ny*ky) / (a1 + a2)
-		e.circles[pair.a].velX = vx1 - p*a2*nx
-		e.circles[pair.a].velY = vy1 - p*a2*ny
-		e.circles[pair.b].velX = vx2 + p*a1*nx
-		e.circles[pair.b].velY = vy2 + p*a1*ny
+		e.circles[pair.a].vel.X = vx1 - p*a2*nx
+		e.circles[pair.a].vel.Y = vy1 - p*a2*ny
+		e.circles[pair.b].vel.X = vx2 + p*a1*nx
+		e.circles[pair.b].vel.Y = vy2 + p*a1*ny
 	}
 }

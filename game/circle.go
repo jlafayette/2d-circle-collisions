@@ -72,8 +72,7 @@ func NewCircle(x, y, r float64, color color.Color, shader *ebiten.Shader) *Circl
 
 	return &Circle{
 		selected: false,
-		posX:     x,
-		posY:     y,
+		pos:      Vec2{x, y},
 		radius:   r,
 		area:     math.Pi * r * r,
 		image:    img,
@@ -83,14 +82,10 @@ func NewCircle(x, y, r float64, color color.Color, shader *ebiten.Shader) *Circl
 // Circle represents a circle
 type Circle struct {
 	selected bool
-	posX     float64
-	posY     float64
-	prevPosX float64
-	prevPosY float64
-	velX     float64
-	velY     float64
-	accX     float64
-	accY     float64
+	pos      Vec2
+	prevPos  Vec2
+	vel      Vec2
+	acc      Vec2
 	radius   float64
 	area     float64
 	image    *ebiten.Image
@@ -99,7 +94,7 @@ type Circle struct {
 // Draw the circle to the screen.
 func (c Circle) Draw(screen *ebiten.Image) {
 	op := &ebiten.DrawImageOptions{}
-	op.GeoM.Translate(c.posX-c.radius, c.posY-c.radius)
+	op.GeoM.Translate(c.pos.X-c.radius, c.pos.Y-c.radius)
 
 	if c.selected {
 		op.ColorM.Scale(0, 0.5, 1, 1)

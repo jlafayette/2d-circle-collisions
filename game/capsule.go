@@ -11,6 +11,8 @@ import (
 // NewCapsule creates a new line from (x1, y1) to (x2, y2)
 func NewCapsule(x1, y1, x2, y2, r float64) *Capsule {
 	return &Capsule{
+		start:  Vec2{x1, y1},
+		end:    Vec2{x2, y2},
 		x1:     x1,
 		y1:     y1,
 		x2:     x2,
@@ -21,6 +23,8 @@ func NewCapsule(x1, y1, x2, y2, r float64) *Capsule {
 
 // Capsule represents a line that can collide with circles
 type Capsule struct {
+	start  Vec2
+	end    Vec2
 	x1     float64
 	y1     float64
 	x2     float64

@@ -73,23 +73,29 @@ func NewGame(width, height int) *Game {
 	}
 }
 
+func cursorPosition() Vec2 {
+	x, y := ebiten.CursorPosition()
+	return Vec2{
+		X: float64(x),
+		Y: float64(y),
+	}
+}
+
 // Update function is called every tick and updates the game's logical state.
 func (g *Game) Update() error {
 	g.time++
 
 	start := time.Now()
 
-	mx, my := ebiten.CursorPosition()
-	mxf := float64(mx)
-	myf := float64(my)
+	cursorPos := cursorPosition()
 
 	// If a circle is under the mouse curser, then select it
 	if inpututil.IsMouseButtonJustPressed(ebiten.MouseButtonLeft) {
-		g.engine.selectNearestPostion(mxf, myf)
+		g.engine.selectNearestPostion(cursorPos)
 	}
 	// Handle pulling selected circle
 	if ebiten.IsMouseButtonPressed(ebiten.MouseButtonLeft) {
-		g.engine.applyForceToSelected(mxf, myf, g.speedControl.multiplier())
+		g.engine.applyForceToSelected(cursorPos, g.speedControl.multiplier())
 	}
 	// Clear selection
 	if inpututil.IsMouseButtonJustReleased(ebiten.MouseButtonLeft) {
@@ -98,10 +104,10 @@ func (g *Game) Update() error {
 
 	// Dynamic input
 	if inpututil.IsMouseButtonJustPressed(ebiten.MouseButtonRight) {
-		g.engine.dynamicNearestPosition(mxf, myf)
+		g.engine.dynamicNearestPosition(cursorPos)
 	}
 	if inpututil.IsMouseButtonJustReleased(ebiten.MouseButtonRight) {
-		g.engine.dynamicRelease(mxf, myf)
+		g.engine.dynamicRelease(cursorPos)
 	}
 
 	// Toggle display of FPS and debug text/lines
@@ -117,7 +123,7 @@ func (g *Game) Update() error {
 
 	if !g.speedControl.paused() {
 		// larger
-		max := 450
+		max := 100
 		for i := 0; len(g.engine.circles) < max && i < 1; i++ {
 			xbuffer := float64(g.width / 4)
 			ybuffer := float64(g.height / 4)
@@ -154,6 +160,8 @@ func (g *Game) Update() error {
 func (g *Game) Draw(screen *ebiten.Image) {
 	start := time.Now()
 
+	cursorPos := cursorPosition()
+
 	screen.Fill(color.Black)
 	for i := range g.engine.circles {
 		g.engine.circles[i].Draw(screen)
@@ -164,28 +172,22 @@ func (g *Game) Draw(screen *ebiten.Image) {
 
 	// Draw dynamic input line
 	if ebiten.IsMouseButtonPressed(ebiten.MouseButtonRight) {
-		mx, my := ebiten.CursorPosition()
-		mxf := float64(mx)
-		myf := float64(my)
-		x2, y2, found := g.engine.getDynamicPosition(mxf, myf)
+		pos, found := g.engine.getDynamicPosition()
 		if found {
 			ebitenutil.DrawLine(
 				screen,
-				mxf, myf, x2, y2,
+				cursorPos.X, cursorPos.Y, pos.X, pos.Y,
 				color.RGBA{0, 255, 0, 255},
 			)
 		}
 	}
 	// Draw selected pull line
 	if ebiten.IsMouseButtonPressed(ebiten.MouseButtonLeft) {
-		mx, my := ebiten.CursorPosition()
-		mxf := float64(mx)
-		myf := float64(my)
-		x2, y2, found := g.engine.getSelectedPosition(mxf, myf)
+		pos, found := g.engine.getSelectedPosition()
 		if found {
 			ebitenutil.DrawLine(
 				screen,
-				mxf, myf, x2, y2,
+				cursorPos.X, cursorPos.Y, pos.X, pos.Y,
 				color.RGBA{0, 255, 0, 255},
 			)
 		}
@@ -217,10 +219,10 @@ func (g *Game) Draw(screen *ebiten.Image) {
 			for _, p := range g.engine.collidingPairs {
 				ebitenutil.DrawLine(
 					screen,
-					g.engine.circles[p.a].posX,
-					g.engine.circles[p.a].posY,
-					g.engine.circles[p.b].posX,
-					g.engine.circles[p.b].posY,
+					g.engine.circles[p.a].pos.X,
+					g.engine.circles[p.a].pos.Y,
+					g.engine.circles[p.b].pos.X,
+					g.engine.circles[p.b].pos.Y,
 					color.RGBA{255, 0, 0, 30},
 				)
 			}
