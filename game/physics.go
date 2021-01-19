@@ -7,9 +7,10 @@ import (
 // NewEngine initializes a new physics engine
 func NewEngine(circles []*Circle, capsules []*Capsule) *Engine {
 	return &Engine{
-		selectedIndex: -1,
-		circles:       circles,
-		capsules:      capsules,
+		selectedIndex:   -1,
+		circles:         circles,
+		capsules:        capsules,
+		selectedCapsule: capsuleSelection{-1, true},
 	}
 }
 
@@ -18,10 +19,16 @@ type Engine struct {
 	selectedIndex     int
 	dynamicIndex      int
 	checks            int
+	selectedCapsule   capsuleSelection
 	circles           []*Circle
 	capsules          []*Capsule
 	collidingPairs    []collidingPair
 	collidingCapsules []collidingCapsule
+}
+
+type capsuleSelection struct {
+	index int
+	start bool
 }
 
 func (e *Engine) selectAtPostion(pos Vec2) {
@@ -128,6 +135,40 @@ func (e *Engine) getDynamicPosition() (Vec2, bool) {
 		return e.circles[e.dynamicIndex].pos, true
 	}
 	return Vec2{0, 0}, false
+}
+
+func (e *Engine) selectCapsuleAtPostion(pos Vec2) bool {
+	for i := range e.capsules {
+		v := e.capsules[i].start
+		r := e.circles[i].radius
+		if math.Abs((v.X-pos.X)*(v.X-pos.X)+(v.Y-pos.Y)*(v.Y-pos.Y)) < (r * r) {
+			e.selectedCapsule.index = i
+			e.selectedCapsule.start = true
+			return true
+		}
+		v = e.capsules[i].end
+		if math.Abs((v.X-pos.X)*(v.X-pos.X)+(v.Y-pos.Y)*(v.Y-pos.Y)) < (r * r) {
+			e.selectedCapsule.index = i
+			e.selectedCapsule.start = false
+			return true
+		}
+	}
+	e.selectedCapsule.index = -1
+	return false
+}
+func (e *Engine) moveSelectedCapsuleTo(pos Vec2) bool {
+	if e.selectedCapsule.index >= 0 {
+		if e.selectedCapsule.start {
+			e.capsules[e.selectedCapsule.index].start = pos
+		} else {
+			e.capsules[e.selectedCapsule.index].end = pos
+		}
+		return true
+	}
+	return false
+}
+func (e *Engine) deselectCapsule() {
+	e.selectedCapsule.index = -1
 }
 
 func (e *Engine) overlap(i, j int) bool {

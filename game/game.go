@@ -57,10 +57,11 @@ func NewGame(width, height int) *Game {
 	var capsules []*Capsule
 	w := float64(width) - 5
 	h := float64(height) - 5
-	capsules = append(capsules, NewCapsule(5, 5, w, 5, 10))
-	capsules = append(capsules, NewCapsule(5, 5, 5, h, 10))
-	capsules = append(capsules, NewCapsule(w, h, w, 5, 10))
-	capsules = append(capsules, NewCapsule(w, h, 5, h, 10))
+	capsules = append(capsules, NewCapsule(5, 5, w, 5, 10, sh))
+	capsules = append(capsules, NewCapsule(5, 5, 5, h, 10, sh))
+	capsules = append(capsules, NewCapsule(w, h, w, 5, 10, sh))
+	capsules = append(capsules, NewCapsule(w, h, 5, h, 10, sh))
+	capsules = append(capsules, NewCapsule(100, 100, 500, 500, 10, sh))
 
 	return &Game{
 		width:        width,
@@ -89,16 +90,22 @@ func (g *Game) Update() error {
 
 	cursorPos := cursorPosition()
 
-	// If a circle is under the mouse curser, then select it
+	// If cursor is over capsule end, then drag it around
+	// Otherwise pull the nearest circle
 	if inpututil.IsMouseButtonJustPressed(ebiten.MouseButtonLeft) {
-		g.engine.selectNearestPostion(cursorPos)
+		found := g.engine.selectCapsuleAtPostion(cursorPos)
+		if !found {
+			g.engine.selectNearestPostion(cursorPos)
+		}
 	}
-	// Handle pulling selected circle
 	if ebiten.IsMouseButtonPressed(ebiten.MouseButtonLeft) {
-		g.engine.applyForceToSelected(cursorPos, g.speedControl.multiplier())
+		found := g.engine.moveSelectedCapsuleTo(cursorPos)
+		if !found {
+			g.engine.applyForceToSelected(cursorPos, g.speedControl.multiplier())
+		}
 	}
-	// Clear selection
 	if inpututil.IsMouseButtonJustReleased(ebiten.MouseButtonLeft) {
+		g.engine.deselectCapsule()
 		g.engine.deselect()
 	}
 
@@ -123,7 +130,7 @@ func (g *Game) Update() error {
 
 	if !g.speedControl.paused() {
 		// larger
-		max := 450
+		max := 100
 		for i := 0; len(g.engine.circles) < max && i < 1; i++ {
 			xbuffer := float64(g.width / 4)
 			ybuffer := float64(g.height / 4)
