@@ -2,7 +2,6 @@ package game
 
 import (
 	"image/color"
-	"math"
 
 	"github.com/hajimehoshi/ebiten/v2"
 	"github.com/hajimehoshi/ebiten/v2/ebitenutil"
@@ -13,10 +12,6 @@ func NewCapsule(x1, y1, x2, y2, r float64) *Capsule {
 	return &Capsule{
 		start:  Vec2{x1, y1},
 		end:    Vec2{x2, y2},
-		x1:     x1,
-		y1:     y1,
-		x2:     x2,
-		y2:     y2,
 		radius: r,
 	}
 }
@@ -25,37 +20,21 @@ func NewCapsule(x1, y1, x2, y2, r float64) *Capsule {
 type Capsule struct {
 	start  Vec2
 	end    Vec2
-	x1     float64
-	y1     float64
-	x2     float64
-	y2     float64
 	radius float64
 }
 
 // Draw the line to the screen.
 func (c *Capsule) Draw(screen *ebiten.Image) {
-	ebitenutil.DrawLine(screen, c.x1, c.y1, c.x2, c.y2, color.White)
+	ebitenutil.DrawLine(screen, c.start.X, c.start.Y, c.end.X, c.end.Y, color.RGBA{255, 0, 0, 255})
 
-	// normal vec
-	nx := -(c.y2 - c.y1)
-	ny := c.x2 - c.x1
+	lineV := c.start.To(c.end)
+	offset := lineV.Normal().Unit().Scaled(c.radius)
 
-	// len of normal vec
-	d := math.Sqrt(nx*nx + ny*ny)
+	start := c.start.Add(offset)
+	end := c.end.Add(offset)
+	ebitenutil.DrawLine(screen, start.X, start.Y, end.X, end.Y, color.White)
 
-	// normalized normal vec
-	nx = nx / d
-	ny = nx / d
-
-	x1 := c.x1 + nx*c.radius
-	y1 := c.y1 + ny*c.radius
-	x2 := c.x2 + nx*c.radius
-	y2 := c.y2 + ny*c.radius
-	ebitenutil.DrawLine(screen, x1, y1, x2, y2, color.White)
-
-	x1 = c.x1 - nx*c.radius
-	y1 = c.y1 - ny*c.radius
-	x2 = c.x2 - nx*c.radius
-	y2 = c.y2 - ny*c.radius
-	ebitenutil.DrawLine(screen, x1, y1, x2, y2, color.White)
+	start = c.start.Sub(offset)
+	end = c.end.Sub(offset)
+	ebitenutil.DrawLine(screen, start.X, start.Y, end.X, end.Y, color.White)
 }

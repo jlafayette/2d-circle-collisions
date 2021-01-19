@@ -52,7 +52,7 @@ func NewGame(width, height int) *Game {
 	}
 
 	var circles []*Circle
-	circles = append(circles, NewCircle(float64(width)/2, float64(height)/2, 200.0, color.White, sh))
+	// circles = append(circles, NewCircle(float64(width)/2, float64(height)/2, 200.0, color.White, sh))
 
 	var capsules []*Capsule
 	w := float64(width) - 5
@@ -123,7 +123,7 @@ func (g *Game) Update() error {
 
 	if !g.speedControl.paused() {
 		// larger
-		max := 100
+		max := 450
 		for i := 0; len(g.engine.circles) < max && i < 1; i++ {
 			xbuffer := float64(g.width / 4)
 			ybuffer := float64(g.height / 4)
