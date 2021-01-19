@@ -144,11 +144,10 @@ type collidingPair struct {
 }
 
 type collidingCapsule struct {
-	i int
-	x float64
-	y float64
-	r float64
-	d float64
+	i   int
+	r   float64
+	d   float64
+	pos Vec2
 }
 
 func (e *Engine) update(width, height int, speed, elapsedTime float64) {
@@ -282,7 +281,7 @@ func (e *Engine) resolveStaticCollisions() {
 			if dist <= (cr + lr) {
 				e.collidingCapsules = append(
 					e.collidingCapsules,
-					collidingCapsule{i, closestPointX, closestPointY, lr, dist},
+					collidingCapsule{i, lr, dist, Vec2{closestPointX, closestPointY}},
 				)
 
 				// Calculate displacement required
@@ -302,65 +301,32 @@ func (e *Engine) resolveStaticCollisions() {
 func (e *Engine) resolveDynamicCollisions() {
 	// dynamic collisions
 	for _, cap := range e.collidingCapsules {
-		px1 := e.circles[cap.i].pos.X
-		py1 := e.circles[cap.i].pos.Y
-		vx1 := e.circles[cap.i].vel.X
-		vy1 := e.circles[cap.i].vel.Y
 		a1 := e.circles[cap.i].area
-		px2 := cap.x
-		py2 := cap.y
-		vx2 := -vx1
-		vy2 := -vy1
+		v2 := e.circles[cap.i].vel.Scaled(-1.0)
 		a2 := a1
 
-		// Distance between balls
-		distance := math.Sqrt((px1-px2)*(px1-px2) + (py1-py2)*(py1-py2))
-
-		// Normal
-		nx := (px2 - px1) / distance
-		ny := (py2 - py1) / distance
+		// Normalized
+		nV := e.circles[cap.i].pos.To(cap.pos).Unit()
 
 		// Calculate new velocities from elastic collision
 		// https://en.wikipedia.org/wiki/Elastic_collision
-		kx := vx1 - vx2
-		ky := vy1 - vy2
-		p := 2.0 * (nx*kx + ny*ky) / (a1 + a2)
-		e.circles[cap.i].vel.X = vx1 - p*a2*nx
-		e.circles[cap.i].vel.Y = vy1 - p*a2*ny
-		// e.circles[pair.b].velX = vx2 + p*a1*nx
-		// e.circles[pair.b].velY = vy2 + p*a1*ny
-
-		// // r=d−2(d⋅n)n
-		// // where d⋅n is the dot product, and n must be normalized.
+		kV := e.circles[cap.i].vel.Sub(v2)
+		p := 2.0 * nV.Dot(kV) / (a1 + a2)
+		e.circles[cap.i].vel = e.circles[cap.i].vel.Sub(nV.Scaled(p).Scaled(a2))
 	}
 
 	for _, pair := range e.collidingPairs {
-		px1 := e.circles[pair.a].pos.X
-		py1 := e.circles[pair.a].pos.Y
-		vx1 := e.circles[pair.a].vel.X
-		vy1 := e.circles[pair.a].vel.Y
 		a1 := e.circles[pair.a].area
-		px2 := e.circles[pair.b].pos.X
-		py2 := e.circles[pair.b].pos.Y
-		vx2 := e.circles[pair.b].vel.X
-		vy2 := e.circles[pair.b].vel.Y
 		a2 := e.circles[pair.b].area
 
-		// Distance between balls
-		distance := math.Sqrt((px1-px2)*(px1-px2) + (py1-py2)*(py1-py2))
-
-		// Normal
-		nx := (px2 - px1) / distance
-		ny := (py2 - py1) / distance
+		// Normalized
+		nV := e.circles[pair.a].pos.To(e.circles[pair.b].pos).Unit()
 
 		// Calculate new velocities from elastic collision
 		// https://en.wikipedia.org/wiki/Elastic_collision
-		kx := vx1 - vx2
-		ky := vy1 - vy2
-		p := 2.0 * (nx*kx + ny*ky) / (a1 + a2)
-		e.circles[pair.a].vel.X = vx1 - p*a2*nx
-		e.circles[pair.a].vel.Y = vy1 - p*a2*ny
-		e.circles[pair.b].vel.X = vx2 + p*a1*nx
-		e.circles[pair.b].vel.Y = vy2 + p*a1*ny
+		kV := e.circles[pair.a].vel.Sub(e.circles[pair.b].vel)
+		p := 2.0 * nV.Dot(kV) / (a1 + a2)
+		e.circles[pair.a].vel = e.circles[pair.a].vel.Sub(nV.Scaled(p).Scaled(a2))
+		e.circles[pair.b].vel = e.circles[pair.b].vel.Add(nV.Scaled(p).Scaled(a1))
 	}
 }
