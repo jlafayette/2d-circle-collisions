@@ -1,33 +1,19 @@
 <!DOCTYPE html>
 <!-- Polyfill for the old Edge browser -->
-<html style="height: 100%; margin: 0px; padding: 0px;">
-
-<head>
-
-    <script src="https://cdn.jsdelivr.net/npm/text-encoding@0.7.0/lib/encoding.min.js"></script>
-    <script src="wasm_exec.js"></script>
-    <script>
-        (async () => {
-            const resp = await fetch('main.wasm');
-            if (!resp.ok) {
-                const pre = document.createElement('pre');
-                pre.innerText = await resp.text();
-                document.body.appendChild(pre);
-                return;
-            }
-            const src = await resp.arrayBuffer();
-            const go = new Go();
-            const result = await WebAssembly.instantiate(src, go.importObject);
-            go.run(result.instance);
-        })();
-    </script>
-
-</head>
-
-<body style="background-color: rgb(0, 0, 0); height: 100%; margin: 0px; padding: 0px;">
-    <canvas width="157" height="967" tabindex="1"
-        style="width: 100%; height: 100%; margin: 0px; padding: 0px; outline: none;">
-    </canvas>
-</body>
-
-</html>
+<script src="https://cdn.jsdelivr.net/npm/text-encoding@0.7.0/lib/encoding.min.js"></script>
+<script src="wasm_exec.js"></script>
+<script>
+    (async () => {
+        const resp = await fetch('main.wasm');
+        if (!resp.ok) {
+            const pre = document.createElement('pre');
+            pre.innerText = await resp.text();
+            document.body.appendChild(pre);
+            return;
+        }
+        const src = await resp.arrayBuffer();
+        const go = new Go();
+        const result = await WebAssembly.instantiate(src, go.importObject);
+        go.run(result.instance);
+    })();
+</script>

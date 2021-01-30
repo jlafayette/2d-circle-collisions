@@ -1,4 +1,4 @@
-module github.com/jlafayette/collisions
+module github.com/jlafayette/2d-circle-collisions
 
 go 1.14
 
