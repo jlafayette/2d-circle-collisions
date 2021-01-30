@@ -4,7 +4,7 @@ import (
 	"log"
 
 	"github.com/hajimehoshi/ebiten/v2"
-	"github.com/jlafayette/collisions/game"
+	"github.com/jlafayette/2d-circle-collisions/game"
 )
 
 var (

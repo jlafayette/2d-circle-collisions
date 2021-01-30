@@ -12,7 +12,7 @@ import (
 	"github.com/hajimehoshi/ebiten/v2"
 	"github.com/hajimehoshi/ebiten/v2/ebitenutil"
 	"github.com/hajimehoshi/ebiten/v2/inpututil"
-	"github.com/jlafayette/collisions/resources/shader"
+	"github.com/jlafayette/2d-circle-collisions/resources/shader"
 	"github.com/lucasb-eyer/go-colorful"
 )
 
