@@ -13,6 +13,7 @@ import (
 	"github.com/hajimehoshi/ebiten/v2/ebitenutil"
 	"github.com/hajimehoshi/ebiten/v2/inpututil"
 	"github.com/jlafayette/collisions/resources/shader"
+	"github.com/lucasb-eyer/go-colorful"
 )
 
 var (
@@ -130,15 +131,15 @@ func (g *Game) Update() error {
 
 	if !g.speedControl.paused() {
 		// larger
-		max := 100
+		max := 250
 		for i := 0; len(g.engine.circles) < max && i < 1; i++ {
 			xbuffer := float64(g.width / 4)
 			ybuffer := float64(g.height / 4)
 			xpos := randFloat(xbuffer, float64(g.width)-xbuffer)
 			ypos := randFloat(ybuffer, float64(g.height)-ybuffer)
 			radius := randRadius(10, 70)
-			circle := NewCircle(xpos, ypos, radius, color.White, g.circleShader)
-			g.engine.circles = append(g.engine.circles, circle)
+			circle := NewCircle(xpos, ypos, radius, g.circleShader)
+			g.engine.addCircle(circle)
 		}
 		// smaller
 		for i := 0; len(g.engine.circles) < max && i < 3; i++ {
@@ -147,8 +148,8 @@ func (g *Game) Update() error {
 			xpos := randFloat(xbuffer, float64(g.width)-xbuffer)
 			ypos := randFloat(ybuffer, float64(g.height)-ybuffer)
 			radius := randRadius(5, 35)
-			circle := NewCircle(xpos, ypos, radius, color.White, g.circleShader)
-			g.engine.circles = append(g.engine.circles, circle)
+			circle := NewCircle(xpos, ypos, radius, g.circleShader)
+			g.engine.addCircle(circle)
 		}
 	}
 
@@ -179,12 +180,20 @@ func (g *Game) Draw(screen *ebiten.Image) {
 
 	// Draw dynamic input line
 	if ebiten.IsMouseButtonPressed(ebiten.MouseButtonRight) {
-		pos, found := g.engine.getDynamicPosition()
-		if found {
+		circle := g.engine.getDynamic()
+		if circle != nil {
+			// opposite hue
+			h, _, _ := circle.color.Hcl()
+			h += 180
+			if h > 360 {
+				h -= 360
+			}
+			clr := colorful.Hcl(h, 1.0, 1.0)
+			r, g, b := clr.Clamped().RGB255()
 			ebitenutil.DrawLine(
 				screen,
-				cursorPos.X, cursorPos.Y, pos.X, pos.Y,
-				color.RGBA{0, 255, 0, 255},
+				cursorPos.X, cursorPos.Y, circle.pos.X, circle.pos.Y,
+				color.RGBA{r, g, b, 255},
 			)
 		}
 	}
@@ -217,6 +226,8 @@ func (g *Game) Draw(screen *ebiten.Image) {
 			msg.WriteString(strconv.Itoa(len(g.engine.circles)))
 			msg.WriteString("\nChecks: ")
 			msg.WriteString(strconv.Itoa(g.engine.checks))
+			msg.WriteString("\nMax Speed: ")
+			msg.WriteString(strconv.FormatFloat(g.engine.maxSpeed, 'f', 2, 64))
 			// msg.WriteString("\nUpdate Elapsed: ")
 			// msg.WriteString(strconv.FormatFloat(g.updateElapsedTime.Seconds(), 'f', 4, 64))
 			// msg.WriteString("\nDraw Elapsed: ")

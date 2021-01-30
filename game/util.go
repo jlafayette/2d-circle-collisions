@@ -8,6 +8,10 @@ func randFloat(min, max float64) float64 {
 	return min + rand.Float64()*(max-min)
 }
 
+func remap(in, inMin, inMax, outMin, outMax float64) float64 {
+	return (in-inMin)/(inMax-inMin)*(outMax-outMin) + outMin
+}
+
 func randRadius(min, max float64) float64 {
 	x := rand.Float64()
 	y := shape(x)
