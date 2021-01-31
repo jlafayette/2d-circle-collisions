@@ -129,8 +129,8 @@ func (g *Game) Update() error {
 	g.speedControl.update()
 
 	if !g.speedControl.paused() {
+		max := 100
 		// larger
-		max := 10
 		for i := 0; len(g.engine.circles) < max && i < 1; i++ {
 			xbuffer := float64(g.width / 4)
 			ybuffer := float64(g.height / 4)
@@ -141,7 +141,7 @@ func (g *Game) Update() error {
 			g.engine.addCircle(circle)
 		}
 		// smaller
-		for i := 0; len(g.engine.circles) < max && i < 3; i++ {
+		for i := 0; len(g.engine.circles) < max && i < 7; i++ {
 			xbuffer := float64(g.width / 4)
 			ybuffer := float64(g.height / 4)
 			xpos := randFloat(xbuffer, float64(g.width)-xbuffer)
