@@ -170,6 +170,10 @@ func (c Circle) Draw(screen *ebiten.Image) {
 	// c.color = colorful.Hcl(hue, chroma, lightness)
 
 	// set chroma and lightness based on speed
+	if c.selected {
+		c.activity = math.Max(c.activity, 1.0)
+	}
+
 	hue, chroma, lightness := c.color.Hcl()
 	chroma = remap(math.Min(c.activity, 1), 0, 1, 0, 1)
 	lightness = remap(math.Min(c.activity, 1), 0, 1, 0.45, 0.9)
@@ -179,7 +183,7 @@ func (c Circle) Draw(screen *ebiten.Image) {
 		// hue, chroma, lightness := c.color.Hcl()
 		// col := colorful.Hcl(hue, chroma, math.Min(lightness+0.35, 1))
 		h, s, v := c.color.Hsv()
-		col := colorful.Hsv(h, s, math.Min(v+0.5, 1))
+		col := colorful.Hsv(h, s, math.Min(v+0.25, 1))
 		op.ColorM.Scale(col.R, col.G, col.B, 1)
 	} else {
 		op.ColorM.Scale(c.color.R, c.color.G, c.color.B, 1)
