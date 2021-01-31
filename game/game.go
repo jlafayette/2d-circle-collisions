@@ -131,7 +131,7 @@ func (g *Game) Update() error {
 
 	if !g.speedControl.paused() {
 		// larger
-		max := 250
+		max := 10
 		for i := 0; len(g.engine.circles) < max && i < 1; i++ {
 			xbuffer := float64(g.width / 4)
 			ybuffer := float64(g.height / 4)
@@ -188,24 +188,35 @@ func (g *Game) Draw(screen *ebiten.Image) {
 			if h > 360 {
 				h -= 360
 			}
-			clr := colorful.Hcl(h, 1.0, 1.0)
-			r, g, b := clr.Clamped().RGB255()
-			ebitenutil.DrawLine(
-				screen,
-				cursorPos.X, cursorPos.Y, circle.pos.X, circle.pos.Y,
-				color.RGBA{r, g, b, 255},
-			)
+			clr := colorful.Hcl(h, 1.0, 0.75)
+			// r, g, b := clr.Clamped().RGB255()
+
+			drawLine(cursorPos, circle.pos, 2, screen, clr)
+			// ebitenutil.DrawLine(
+			// 	screen,
+			// 	cursorPos.X, cursorPos.Y, circle.pos.X, circle.pos.Y,
+			// 	color.RGBA{r, g, b, 255},
+			// )
 		}
 	}
+
 	// Draw selected pull line
 	if ebiten.IsMouseButtonPressed(ebiten.MouseButtonLeft) {
-		pos, found := g.engine.getSelectedPosition()
-		if found {
-			ebitenutil.DrawLine(
-				screen,
-				cursorPos.X, cursorPos.Y, pos.X, pos.Y,
-				color.RGBA{0, 255, 0, 255},
-			)
+		circle := g.engine.getSelected()
+		if circle != nil {
+			// opposite hue
+			h, _, _ := circle.color.Hcl()
+			h += 180
+			if h > 360 {
+				h -= 360
+			}
+			clr := colorful.Hcl(h, 1.0, 0.75)
+			drawLine(cursorPos, circle.pos, 2, screen, clr)
+			// ebitenutil.DrawLine(
+			// 	screen,
+			// 	cursorPos.X, cursorPos.Y, pos.X, pos.Y,
+			// 	color.RGBA{0, 255, 0, 255},
+			// )
 		}
 	}
 

@@ -156,6 +156,13 @@ func (e *Engine) dynamicRelease(pos Vec2) {
 	e.selectedCircle.isDynamic = false
 }
 
+func (e *Engine) getSelected() *Circle {
+	if e.selectedCircle.pointer != nil && !e.selectedCircle.isDynamic {
+		return e.selectedCircle.pointer
+	}
+	return nil
+}
+
 func (e *Engine) getSelectedPosition() (Vec2, bool) {
 	circle := e.selectedCircle.pointer
 	if circle != nil && !e.selectedCircle.isDynamic {

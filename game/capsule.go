@@ -1,10 +1,8 @@
 package game
 
 import (
-	"image/color"
-
 	"github.com/hajimehoshi/ebiten/v2"
-	"github.com/hajimehoshi/ebiten/v2/ebitenutil"
+	"github.com/lucasb-eyer/go-colorful"
 )
 
 // NewCapsule creates a new line from (x1, y1) to (x2, y2)
@@ -42,16 +40,5 @@ func (c *Capsule) Draw(screen *ebiten.Image) {
 	op.GeoM.Translate(c.end.X-c.radius, c.end.Y-c.radius)
 	screen.DrawImage(c.image, op)
 
-	// ebitenutil.DrawLine(screen, c.start.X, c.start.Y, c.end.X, c.end.Y, color.RGBA{255, 0, 0, 255})
-
-	lineV := c.start.To(c.end)
-	offset := lineV.Normal().Unit().Scaled(c.radius)
-
-	start := c.start.Add(offset)
-	end := c.end.Add(offset)
-	ebitenutil.DrawLine(screen, start.X, start.Y, end.X, end.Y, color.White)
-
-	start = c.start.Sub(offset)
-	end = c.end.Sub(offset)
-	ebitenutil.DrawLine(screen, start.X, start.Y, end.X, end.Y, color.White)
+	drawLine(c.start, c.end, c.radius*2.0, screen, colorful.Hsl(0, 0, 0.5))
 }

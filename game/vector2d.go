@@ -64,3 +64,8 @@ func (u Vec2) Cross(v Vec2) float64 {
 func (u Vec2) Normal() Vec2 {
 	return Vec2{-u.Y, u.X}
 }
+
+// Angle returns the angle of the vector u to the X axis in the range -Pi, Pi.
+func (u Vec2) Angle() float64 {
+	return math.Atan2(u.Y, u.X)
+}
