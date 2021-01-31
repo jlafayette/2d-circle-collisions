@@ -189,14 +189,7 @@ func (g *Game) Draw(screen *ebiten.Image) {
 				h -= 360
 			}
 			clr := colorful.Hcl(h, 1.0, 0.75)
-			// r, g, b := clr.Clamped().RGB255()
-
 			drawLine(cursorPos, circle.pos, 2, screen, clr)
-			// ebitenutil.DrawLine(
-			// 	screen,
-			// 	cursorPos.X, cursorPos.Y, circle.pos.X, circle.pos.Y,
-			// 	color.RGBA{r, g, b, 255},
-			// )
 		}
 	}
 
@@ -212,11 +205,6 @@ func (g *Game) Draw(screen *ebiten.Image) {
 			}
 			clr := colorful.Hcl(h, 1.0, 0.75)
 			drawLine(cursorPos, circle.pos, 2, screen, clr)
-			// ebitenutil.DrawLine(
-			// 	screen,
-			// 	cursorPos.X, cursorPos.Y, pos.X, pos.Y,
-			// 	color.RGBA{0, 255, 0, 255},
-			// )
 		}
 	}
 

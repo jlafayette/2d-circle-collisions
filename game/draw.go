@@ -17,14 +17,12 @@ func init() {
 func drawLine(start, end Vec2, thickness float64, target *ebiten.Image, color colorful.Color) {
 	op := &ebiten.DrawImageOptions{}
 	op.ColorM.Scale(color.R, color.G, color.B, 1.0)
-	// op.ColorM.Scale(0.5, 0.5, 0.5, 1)
 
 	lineV := start.To(end)
 	unitOffset := lineV.Normal().Unit()
 	offset := unitOffset.Scaled(thickness / 2.0)
 
 	// Use rectangle image to draw line by rotating, scaling, and moving
-	op.GeoM.Reset()
 	op.GeoM.Scale(lineV.Len(), thickness)
 	op.GeoM.Rotate(lineV.Angle())
 	op.GeoM.Translate(start.X-offset.X, start.Y-offset.Y)

@@ -95,15 +95,6 @@ func NewCircle(x, y, r float64, shader *ebiten.Shader) *Circle {
 }
 
 func randomCircleColor() colorful.Color {
-	// var hue float64
-	// if randFloat(0, 1) > 0.5 {
-	// 	hue = randFloat(265, 290) // 0 .. 360
-	// } else {
-	// 	hue = randFloat(340, 380)
-	// 	if hue > 360 {
-	// 		hue -= 360
-	// 	}
-	// }
 	hue := randFloat(0, 360)
 	if hue > 360 {
 		hue -= 360
@@ -136,20 +127,9 @@ type Circle struct {
 
 func (c *Circle) postUpdate() {
 	c.speed = c.vel.Len()
-
-	// mod controls the accumulation of activity based on speed
-	// maxMod := remap(c.radius, 5, 70, 5, 2)
 	mod := remap(c.speed, 0, 100, 0, c.maxMod)
-
 	c.activity += mod
-
-	// dim rate controls how fast activity fades
-	// dimRate := remap(c.radius, 5, 70, 0.07, 0.01)
 	c.activity -= c.dimRate
-
-	// max change is the max that activity can reach
-	// maxCharge := 1.5
-
 	c.activity = math.Min(math.Max(c.activity, 0), c.maxCharge)
 }
 
@@ -163,12 +143,6 @@ func (c Circle) Draw(screen *ebiten.Image) {
 	op := &ebiten.DrawImageOptions{}
 	op.GeoM.Translate(c.pos.X-c.radius, c.pos.Y-c.radius)
 
-	// w, h := screen.Size()
-	// hue, chroma, lightness := c.color.Hcl()
-	// chroma = remap(c.pos.Y, 0, float64(h), -1.0, 1.0)
-	// hue = remap(c.pos.X, 0, float64(w), 0, 360)
-	// c.color = colorful.Hcl(hue, chroma, lightness)
-
 	// set chroma and lightness based on speed
 	if c.selected {
 		c.activity = math.Max(c.activity, 1.0)
@@ -180,8 +154,6 @@ func (c Circle) Draw(screen *ebiten.Image) {
 	c.color = colorful.Hcl(hue, chroma, lightness)
 
 	if c.selected {
-		// hue, chroma, lightness := c.color.Hcl()
-		// col := colorful.Hcl(hue, chroma, math.Min(lightness+0.35, 1))
 		h, s, v := c.color.Hsv()
 		col := colorful.Hsv(h, s, math.Min(v+0.25, 1))
 		op.ColorM.Scale(col.R, col.G, col.B, 1)
