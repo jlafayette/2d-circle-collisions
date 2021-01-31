@@ -13,7 +13,6 @@ import (
 	"github.com/hajimehoshi/ebiten/v2/ebitenutil"
 	"github.com/hajimehoshi/ebiten/v2/inpututil"
 	"github.com/jlafayette/2d-circle-collisions/resources/shader"
-	"github.com/lucasb-eyer/go-colorful"
 )
 
 var (
@@ -182,14 +181,7 @@ func (g *Game) Draw(screen *ebiten.Image) {
 	if ebiten.IsMouseButtonPressed(ebiten.MouseButtonRight) {
 		circle := g.engine.getDynamic()
 		if circle != nil {
-			// opposite hue
-			h, _, _ := circle.color.Hcl()
-			h += 180
-			if h > 360 {
-				h -= 360
-			}
-			clr := colorful.Hcl(h, 1.0, 0.75)
-			drawLine(cursorPos, circle.pos, 2, screen, clr)
+			drawLine(cursorPos, circle.pos, 2, screen, contrastColor(circle.color))
 		}
 	}
 
@@ -197,14 +189,7 @@ func (g *Game) Draw(screen *ebiten.Image) {
 	if ebiten.IsMouseButtonPressed(ebiten.MouseButtonLeft) {
 		circle := g.engine.getSelected()
 		if circle != nil {
-			// opposite hue
-			h, _, _ := circle.color.Hcl()
-			h += 180
-			if h > 360 {
-				h -= 360
-			}
-			clr := colorful.Hcl(h, 1.0, 0.75)
-			drawLine(cursorPos, circle.pos, 2, screen, clr)
+			drawLine(cursorPos, circle.pos, 2, screen, contrastColor(circle.color))
 		}
 	}
 
