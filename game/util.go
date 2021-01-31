@@ -1,6 +1,7 @@
 package game
 
 import (
+	"math"
 	"math/rand"
 )
 
@@ -10,6 +11,10 @@ func randFloat(min, max float64) float64 {
 
 func remap(in, inMin, inMax, outMin, outMax float64) float64 {
 	return (in-inMin)/(inMax-inMin)*(outMax-outMin) + outMin
+}
+
+func clamp(in, min, max float64) float64 {
+	return math.Min(max, math.Max(min, in))
 }
 
 func randRadius(min, max float64) float64 {

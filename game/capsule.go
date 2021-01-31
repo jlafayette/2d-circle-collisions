@@ -40,5 +40,5 @@ func (c *Capsule) Draw(screen *ebiten.Image) {
 	op.GeoM.Translate(c.end.X-c.radius, c.end.Y-c.radius)
 	screen.DrawImage(c.image, op)
 
-	drawLine(c.start, c.end, c.radius*2.0, screen, colorful.Hsl(0, 0, 0.5))
+	drawLine(c.start, c.end, c.radius*2.0, screen, colorful.Hsl(0, 0, 0.5), 1.0)
 }

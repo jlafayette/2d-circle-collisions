@@ -5,7 +5,6 @@ import (
 	"math"
 
 	"github.com/hajimehoshi/ebiten/v2"
-	"github.com/hajimehoshi/ebiten/v2/ebitenutil"
 	"github.com/lucasb-eyer/go-colorful"
 )
 
@@ -141,37 +140,40 @@ func (c *Circle) addCollisionEnergy(energy float64) {
 // Draw the circle to the screen.
 func (c Circle) Draw(screen *ebiten.Image) {
 	op := &ebiten.DrawImageOptions{}
-	op.GeoM.Translate(c.pos.X-c.radius, c.pos.Y-c.radius)
 
 	// set chroma and lightness based on speed
 	if c.selected {
 		c.activity = math.Max(c.activity, 1.0)
 	}
-
 	hue, chroma, lightness := c.color.Hcl()
 	chroma = remap(math.Min(c.activity, 1), 0, 1, 0, 1)
 	lightness = remap(math.Min(c.activity, 1), 0, 1, 0.45, 0.9)
 	c.color = colorful.Hcl(hue, chroma, lightness)
-
+	r := c.color.R
+	g := c.color.G
+	b := c.color.B
 	if c.selected {
 		h, s, v := c.color.Hsv()
 		col := colorful.Hsv(h, s, math.Min(v+0.25, 1))
-		op.ColorM.Scale(col.R, col.G, col.B, 1)
-	} else {
-		op.ColorM.Scale(c.color.R, c.color.G, c.color.B, 1)
+		r = col.R
+		g = col.G
+		b = col.B
 	}
 
-	// Draw motion trails
-	if c.speed > 2 {
-		lineV := c.prevPos.To(c.pos)
-		offset := lineV.Normal().Unit().Scaled(c.radius * 0.8)
-		start := c.prevPos.Add(offset)
-		end := c.pos.Add(offset)
-		ebitenutil.DrawLine(screen, start.X, start.Y, end.X, end.Y, c.color)
-		start = c.prevPos.Sub(offset)
-		end = c.pos.Sub(offset)
-		ebitenutil.DrawLine(screen, start.X, start.Y, end.X, end.Y, c.color)
+	// Draw motion blur effect that fades as the circle slows
+	if c.speed > 10 {
+		a := remap(clamp(c.speed, 10, 75), 10, 75, 0, 0.95)
+		op.GeoM.Translate(c.prevPos.X-c.radius, c.prevPos.Y-c.radius)
+		op.ColorM.Scale(r, g, b, a)
+		screen.DrawImage(c.image, op)
+		drawLine(c.pos, c.prevPos, c.radius*1.9, screen, c.color, a)
 	}
+
+	// Draw the circle
+	op.GeoM.Reset()
+	op.ColorM.Reset()
+	op.ColorM.Scale(r, g, b, 1)
+	op.GeoM.Translate(c.pos.X-c.radius, c.pos.Y-c.radius)
 	screen.DrawImage(c.image, op)
 
 }

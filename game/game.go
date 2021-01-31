@@ -181,7 +181,7 @@ func (g *Game) Draw(screen *ebiten.Image) {
 	if ebiten.IsMouseButtonPressed(ebiten.MouseButtonRight) {
 		circle := g.engine.getDynamic()
 		if circle != nil {
-			drawLine(cursorPos, circle.pos, 2, screen, contrastColor(circle.color))
+			drawLine(cursorPos, circle.pos, 2, screen, contrastColor(circle.color), 1.0)
 		}
 	}
 
@@ -189,7 +189,7 @@ func (g *Game) Draw(screen *ebiten.Image) {
 	if ebiten.IsMouseButtonPressed(ebiten.MouseButtonLeft) {
 		circle := g.engine.getSelected()
 		if circle != nil {
-			drawLine(cursorPos, circle.pos, 2, screen, contrastColor(circle.color))
+			drawLine(cursorPos, circle.pos, 2, screen, contrastColor(circle.color), 1.0)
 		}
 	}
 
