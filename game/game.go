@@ -90,31 +90,30 @@ func (g *Game) Update() error {
 
 	cursorPos := cursorPosition()
 
-	// If cursor is over capsule end, then drag it around
-	// Otherwise pull the nearest circle
+	// Left mouse button -> Drag capsule / Dynamic input
 	if inpututil.IsMouseButtonJustPressed(ebiten.MouseButtonLeft) {
 		found := g.engine.selectCapsuleAtPostion(cursorPos)
 		if !found {
-			g.engine.selectNearestPostion(cursorPos)
+			g.engine.dynamicNearestPosition(cursorPos)
 		}
 	}
 	if ebiten.IsMouseButtonPressed(ebiten.MouseButtonLeft) {
-		found := g.engine.moveSelectedCapsuleTo(cursorPos)
-		if !found {
-			g.engine.applyForceToSelected(cursorPos, g.speedControl.multiplier())
-		}
+		g.engine.moveSelectedCapsuleTo(cursorPos)
 	}
 	if inpututil.IsMouseButtonJustReleased(ebiten.MouseButtonLeft) {
 		g.engine.deselectCapsule()
-		g.engine.deselect()
+		g.engine.dynamicRelease(cursorPos)
 	}
 
-	// Dynamic input
+	// Right mouse button -> Pull the nearest circle
 	if inpututil.IsMouseButtonJustPressed(ebiten.MouseButtonRight) {
-		g.engine.dynamicNearestPosition(cursorPos)
+		g.engine.selectNearestPostion(cursorPos)
+	}
+	if ebiten.IsMouseButtonPressed(ebiten.MouseButtonRight) {
+		g.engine.applyForceToSelected(cursorPos, g.speedControl.multiplier())
 	}
 	if inpututil.IsMouseButtonJustReleased(ebiten.MouseButtonRight) {
-		g.engine.dynamicRelease(cursorPos)
+		g.engine.deselect()
 	}
 
 	// Toggle display of FPS and debug text/lines
@@ -178,7 +177,7 @@ func (g *Game) Draw(screen *ebiten.Image) {
 	}
 
 	// Draw dynamic input line
-	if ebiten.IsMouseButtonPressed(ebiten.MouseButtonRight) {
+	if ebiten.IsMouseButtonPressed(ebiten.MouseButtonLeft) {
 		circle := g.engine.getDynamic()
 		if circle != nil {
 			drawLine(cursorPos, circle.pos, 2, screen, contrastColor(circle.color), 1.0)
@@ -186,7 +185,7 @@ func (g *Game) Draw(screen *ebiten.Image) {
 	}
 
 	// Draw selected pull line
-	if ebiten.IsMouseButtonPressed(ebiten.MouseButtonLeft) {
+	if ebiten.IsMouseButtonPressed(ebiten.MouseButtonRight) {
 		circle := g.engine.getSelected()
 		if circle != nil {
 			drawLine(cursorPos, circle.pos, 2, screen, contrastColor(circle.color), 1.0)
