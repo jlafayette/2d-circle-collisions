@@ -98,7 +98,7 @@ func (e *Engine) circleNearestPosition(pos Vec2) *Circle {
 		cx := e.circles[i].pos.X
 		cy := e.circles[i].pos.Y
 		cr := e.circles[i].radius
-		d := math.Abs((cx-pos.X)*(cx-pos.X) + (cy-pos.Y)*(cy-pos.Y))
+		d := (cx-pos.X)*(cx-pos.X) + (cy-pos.Y)*(cy-pos.Y)
 		if d < (cr * cr) {
 			return e.circles[i]
 		}
@@ -115,7 +115,7 @@ func (e *Engine) circleAtPosition(pos Vec2) *Circle {
 		cx := e.circles[i].pos.X
 		cy := e.circles[i].pos.Y
 		cr := e.circles[i].radius
-		if math.Abs((cx-pos.X)*(cx-pos.X)+(cy-pos.Y)*(cy-pos.Y)) < (cr * cr) {
+		if (cx-pos.X)*(cx-pos.X)+(cy-pos.Y)*(cy-pos.Y) < (cr * cr) {
 			return e.circles[i]
 		}
 	}
@@ -183,13 +183,13 @@ func (e *Engine) selectCapsuleAtPostion(pos Vec2) bool {
 	for i := range e.capsules {
 		v := e.capsules[i].start
 		r := e.circles[i].radius
-		if math.Abs((v.X-pos.X)*(v.X-pos.X)+(v.Y-pos.Y)*(v.Y-pos.Y)) < (r * r) {
+		if (v.X-pos.X)*(v.X-pos.X)+(v.Y-pos.Y)*(v.Y-pos.Y) < (r * r) {
 			e.selectedCapsule.index = i
 			e.selectedCapsule.start = true
 			return true
 		}
 		v = e.capsules[i].end
-		if math.Abs((v.X-pos.X)*(v.X-pos.X)+(v.Y-pos.Y)*(v.Y-pos.Y)) < (r * r) {
+		if (v.X-pos.X)*(v.X-pos.X)+(v.Y-pos.Y)*(v.Y-pos.Y) < (r * r) {
 			e.selectedCapsule.index = i
 			e.selectedCapsule.start = false
 			return true
@@ -216,9 +216,9 @@ func (e *Engine) deselectCapsule() {
 func (e *Engine) overlap(i, j int) bool {
 
 	// This looks ugly, but here it is without all the index lookups
-	// math.Abs((x1-x2)*(x1-x2)+(y1-y2)*(y1-y2)) < (r1+r2)*(r1+r2)
+	// (x1-x2)*(x1-x2)+(y1-y2)*(y1-y2) < (r1+r2)*(r1+r2)
 
-	return math.Abs((e.circles[i].pos.X-e.circles[j].pos.X)*(e.circles[i].pos.X-e.circles[j].pos.X)+(e.circles[i].pos.Y-e.circles[j].pos.Y)*(e.circles[i].pos.Y-e.circles[j].pos.Y)) < (e.circles[i].radius+e.circles[j].radius)*(e.circles[i].radius+e.circles[j].radius)
+	return (e.circles[i].pos.X-e.circles[j].pos.X)*(e.circles[i].pos.X-e.circles[j].pos.X)+(e.circles[i].pos.Y-e.circles[j].pos.Y)*(e.circles[i].pos.Y-e.circles[j].pos.Y) < (e.circles[i].radius+e.circles[j].radius)*(e.circles[i].radius+e.circles[j].radius)
 }
 
 type collidingPair struct {
