@@ -155,7 +155,7 @@ func (g *Game) Update() error {
 	g.speedControl.update()
 
 	if !g.speedControl.paused() {
-		max := 700
+		max := 10
 		// larger
 		// for i := 0; len(g.engine.circles) < max && i < 1; i++ {
 		// 	xbuffer := float64(g.width / 4)
@@ -192,10 +192,10 @@ func (g *Game) Update() error {
 // second.
 func (g *Game) Draw(screen *ebiten.Image) {
 	start := time.Now()
-
 	cursorPos := cursorPosition()
 
 	screen.Fill(color.Black)
+
 	// draw rectangles
 	if g.showDebug {
 		for _, rect := range g.engine.collisionRects {
@@ -276,14 +276,6 @@ func (g *Game) Draw(screen *ebiten.Image) {
 			}
 		}
 		ebitenutil.DebugPrint(screen, msg.String())
-	}
-
-	if g.showDebug {
-		for _, rect := range g.engine.collisionRects {
-			for _, point := range rect.collidePoints {
-				ebitenutil.DrawRect(screen, point.X, point.Y, 2, 2, color.RGBA{255, 0, 0, 255})
-			}
-		}
 	}
 
 	g.drawElapsedTime = time.Now().Sub(start)

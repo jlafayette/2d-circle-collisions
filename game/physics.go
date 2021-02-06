@@ -23,9 +23,8 @@ func NewEngine(width, height int, circles []*Circle, capsules []*Capsule, rectan
 }
 
 type collisionRect struct {
-	upperLeft     Vec2
-	lowerRight    Vec2
-	collidePoints []Vec2
+	upperLeft  Vec2
+	lowerRight Vec2
 }
 
 // Engine handles collisions
@@ -256,10 +255,6 @@ func (e *Engine) update(width, height int, speed, elapsedTime float64) {
 		e.circles[i].prevPos = e.circles[i].pos
 	}
 
-	for i := range e.collisionRects {
-		e.collisionRects[i].collidePoints = e.collisionRects[i].collidePoints[:0] // clear slice but keep capacity
-	}
-
 	stepSpeed := speed / float64(e.steps)
 	for step := e.steps; step > 0; step-- {
 		e.updateCirclePositions(width, height, stepSpeed, elapsedTime)
@@ -432,15 +427,12 @@ func (e *Engine) resolveStaticCollisions() {
 
 				if dist > 0 {
 					// Circle is mostly outside
-					e.collisionRects[j].collidePoints = append(e.collisionRects[j].collidePoints, nearest)
+
 					// Calculate displacement required
 					amount := dist - e.circles[i].radius
 					// displace circle away from collision
 					e.circles[i].pos = e.circles[i].pos.Add(v.Unit().Scaled(amount))
 				} else {
-
-					e.collisionRects[j].collidePoints = append(e.collisionRects[j].collidePoints, Vec2{x, y})
-
 					nearest = Vec2{x, y}
 					v = e.circles[i].pos.To(nearest)
 					dist = v.Len()
