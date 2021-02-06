@@ -6,18 +6,26 @@ import (
 )
 
 // NewEngine initializes a new physics engine
-func NewEngine(circles []*Circle, capsules []*Capsule) *Engine {
+func NewEngine(width, height int, circles []*Circle, capsules []*Capsule, rectangles []*collisionRect) *Engine {
+
 	e := &Engine{
 		minArea:         99999999,
 		steps:           10,
 		inverseSteps:    1 / 10,
 		selectedCapsule: capsuleSelection{-1, true},
 		capsules:        capsules,
+		collisionRects:  rectangles,
 	}
 	for _, circle := range circles {
 		e.addCircle(circle)
 	}
 	return e
+}
+
+type collisionRect struct {
+	upperLeft     Vec2
+	lowerRight    Vec2
+	collidePoints []Vec2
 }
 
 // Engine handles collisions
@@ -33,6 +41,7 @@ type Engine struct {
 	selectedCapsule   capsuleSelection
 	circles           []*Circle
 	capsules          []*Capsule
+	collisionRects    []*collisionRect
 	collidingPairs    []collidingPair
 	collidingCapsules []collidingCapsule
 }
@@ -48,6 +57,12 @@ type circleSelection struct {
 }
 
 func (e *Engine) addCircle(circle *Circle) {
+	for i := range e.circles {
+		if e.circles[i].pos.X == circle.pos.X && e.circles[i].pos.Y == circle.pos.Y {
+			circle.pos.X += 0.1
+			circle.pos.Y += 0.1
+		}
+	}
 	e.circles = append(e.circles, circle)
 	e.maxRadius = math.Max(e.maxRadius, circle.radius)
 	e.minArea = math.Min(e.minArea, circle.area)
@@ -241,9 +256,12 @@ func (e *Engine) update(width, height int, speed, elapsedTime float64) {
 		e.circles[i].prevPos = e.circles[i].pos
 	}
 
-	steps := 10
-	stepSpeed := speed / float64(steps)
-	for step := steps; step > 0; step-- {
+	for i := range e.collisionRects {
+		e.collisionRects[i].collidePoints = e.collisionRects[i].collidePoints[:0] // clear slice but keep capacity
+	}
+
+	stepSpeed := speed / float64(e.steps)
+	for step := e.steps; step > 0; step-- {
 		e.updateCirclePositions(width, height, stepSpeed, elapsedTime)
 		e.sortCircles()
 		e.resolveStaticCollisions()
@@ -374,6 +392,63 @@ func (e *Engine) resolveStaticCollisions() {
 				e.circles[i].pos.Y -= amount * (cy - closestPointY) * distanceM
 
 				// TODO: Add ball and line pair to dynamic collisions
+			}
+		}
+
+		// Rectangle collisions
+		for j := range e.collisionRects {
+			upperLeft := e.collisionRects[j].upperLeft
+			lowerRight := e.collisionRects[j].lowerRight
+			// nearest point
+			x := clamp(e.circles[i].pos.X, upperLeft.X, lowerRight.X)
+			y := clamp(e.circles[i].pos.Y, upperLeft.Y, lowerRight.Y)
+			nearest := Vec2{x, y}
+			v := e.circles[i].pos.To(nearest)
+			dist := v.Len()
+			if dist < e.circles[i].radius {
+
+				// If circle is mostly inside, push nearest point out to nearest edge
+				// TODO: Move this to dynamic collision resolution section
+				dTp := math.Abs(upperLeft.Y - y)
+				dBt := math.Abs(lowerRight.Y - y)
+				dLf := math.Abs(upperLeft.X - x)
+				dRt := math.Abs(lowerRight.X - x)
+				if dTp <= dBt && dTp <= dLf && dTp <= dRt {
+					y = upperLeft.Y
+					e.circles[i].vel.Y = -e.circles[i].vel.Y
+				} else if dBt <= dTp && dBt <= dLf && dBt <= dRt {
+					y = lowerRight.Y
+					e.circles[i].vel.Y = -e.circles[i].vel.Y
+				} else if dLf <= dTp && dLf <= dBt && dLf <= dRt {
+					x = upperLeft.X
+					e.circles[i].vel.X = -e.circles[i].vel.X
+				} else if dRt <= dTp && dRt <= dBt && dRt <= dLf {
+					x = lowerRight.X
+					e.circles[i].vel.X = -e.circles[i].vel.X
+				} else {
+					x = lowerRight.X
+					e.circles[i].vel.X = -e.circles[i].vel.X
+				}
+
+				if dist > 0 {
+					// Circle is mostly outside
+					e.collisionRects[j].collidePoints = append(e.collisionRects[j].collidePoints, nearest)
+					// Calculate displacement required
+					amount := dist - e.circles[i].radius
+					// displace circle away from collision
+					e.circles[i].pos = e.circles[i].pos.Add(v.Unit().Scaled(amount))
+				} else {
+
+					e.collisionRects[j].collidePoints = append(e.collisionRects[j].collidePoints, Vec2{x, y})
+
+					nearest = Vec2{x, y}
+					v = e.circles[i].pos.To(nearest)
+					dist = v.Len()
+					// Calculate displacement required
+					amount := dist + e.circles[i].radius
+					// displace circle away from collision
+					e.circles[i].pos = e.circles[i].pos.Add(v.Unit().Scaled(amount))
+				}
 			}
 		}
 	}

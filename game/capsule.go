@@ -6,7 +6,7 @@ import (
 )
 
 // NewCapsule creates a new line from (x1, y1) to (x2, y2)
-func NewCapsule(x1, y1, x2, y2, r float64, shader *ebiten.Shader) *Capsule {
+func NewCapsule(start, end Vec2, r float64, shader *ebiten.Shader) *Capsule {
 	width := int(r)*2 + 3
 	height := width
 
@@ -14,8 +14,8 @@ func NewCapsule(x1, y1, x2, y2, r float64, shader *ebiten.Shader) *Capsule {
 
 	drawCircleToImage(img, shader)
 	return &Capsule{
-		start:  Vec2{x1, y1},
-		end:    Vec2{x2, y2},
+		start:  start,
+		end:    end,
 		radius: r,
 		image:  img,
 	}

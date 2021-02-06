@@ -55,13 +55,35 @@ func NewGame(width, height int) *Game {
 	// circles = append(circles, NewCircle(float64(width)/2, float64(height)/2, 200.0, color.White, sh))
 
 	var capsules []*Capsule
-	w := float64(width) - 5
-	h := float64(height) - 5
-	capsules = append(capsules, NewCapsule(5, 5, w, 5, 10, sh))
-	capsules = append(capsules, NewCapsule(5, 5, 5, h, 10, sh))
-	capsules = append(capsules, NewCapsule(w, h, w, 5, 10, sh))
-	capsules = append(capsules, NewCapsule(w, h, 5, h, 10, sh))
-	capsules = append(capsules, NewCapsule(100, 100, 500, 500, 10, sh))
+	w := float64(width)
+	h := float64(height)
+	capsules = append(capsules, NewCapsule(Vec2{w * 0.33, h * 0.5}, Vec2{w * 0.67, h * 0.5}, 10, sh))
+
+	var rectangles []*collisionRect
+	rectangles = append(rectangles, &collisionRect{
+		upperLeft:  Vec2{w * 0.5, 200},
+		lowerRight: Vec2{w*0.5 + 200, h * 0.5}},
+	)
+	// left
+	rectangles = append(rectangles, &collisionRect{
+		upperLeft:  Vec2{-w, -w},
+		lowerRight: Vec2{0, h + w}},
+	)
+	// right
+	rectangles = append(rectangles, &collisionRect{
+		upperLeft:  Vec2{w, -w},
+		lowerRight: Vec2{w * 2, h + w}},
+	)
+	// top
+	rectangles = append(rectangles, &collisionRect{
+		upperLeft:  Vec2{0, -h * 2},
+		lowerRight: Vec2{w, 0}},
+	)
+	// bottom
+	rectangles = append(rectangles, &collisionRect{
+		upperLeft:  Vec2{0, h},
+		lowerRight: Vec2{w, h * 2}},
+	)
 
 	return &Game{
 		width:        width,
@@ -69,7 +91,7 @@ func NewGame(width, height int) *Game {
 		showFPS:      true,
 		showDebug:    true,
 		speedControl: NewSpeedControl(),
-		engine:       NewEngine(circles, capsules),
+		engine:       NewEngine(width, height, circles, capsules, rectangles),
 		circleShader: sh,
 	}
 }
@@ -105,15 +127,20 @@ func (g *Game) Update() error {
 		g.engine.dynamicRelease(cursorPos)
 	}
 
-	// Right mouse button -> Pull the nearest circle
+	// // Right mouse button -> Pull the nearest circle
+	// if inpututil.IsMouseButtonJustPressed(ebiten.MouseButtonRight) {
+	// 	g.engine.selectNearestPostion(cursorPos)
+	// }
+	// if ebiten.IsMouseButtonPressed(ebiten.MouseButtonRight) {
+	// 	g.engine.applyForceToSelected(cursorPos, g.speedControl.multiplier())
+	// }
+	// if inpututil.IsMouseButtonJustReleased(ebiten.MouseButtonRight) {
+	// 	g.engine.deselect()
+	// }
 	if inpututil.IsMouseButtonJustPressed(ebiten.MouseButtonRight) {
-		g.engine.selectNearestPostion(cursorPos)
-	}
-	if ebiten.IsMouseButtonPressed(ebiten.MouseButtonRight) {
-		g.engine.applyForceToSelected(cursorPos, g.speedControl.multiplier())
-	}
-	if inpututil.IsMouseButtonJustReleased(ebiten.MouseButtonRight) {
-		g.engine.deselect()
+		radius := randRadius(5, 35)
+		circle := NewCircle(cursorPos.X, cursorPos.Y, radius, g.circleShader)
+		g.engine.addCircle(circle)
 	}
 
 	// Toggle display of FPS and debug text/lines
@@ -128,17 +155,17 @@ func (g *Game) Update() error {
 	g.speedControl.update()
 
 	if !g.speedControl.paused() {
-		max := 100
+		max := 700
 		// larger
-		for i := 0; len(g.engine.circles) < max && i < 1; i++ {
-			xbuffer := float64(g.width / 4)
-			ybuffer := float64(g.height / 4)
-			xpos := randFloat(xbuffer, float64(g.width)-xbuffer)
-			ypos := randFloat(ybuffer, float64(g.height)-ybuffer)
-			radius := randRadius(10, 70)
-			circle := NewCircle(xpos, ypos, radius, g.circleShader)
-			g.engine.addCircle(circle)
-		}
+		// for i := 0; len(g.engine.circles) < max && i < 1; i++ {
+		// 	xbuffer := float64(g.width / 4)
+		// 	ybuffer := float64(g.height / 4)
+		// 	xpos := randFloat(xbuffer, float64(g.width)-xbuffer)
+		// 	ypos := randFloat(ybuffer, float64(g.height)-ybuffer)
+		// 	radius := randRadius(10, 70)
+		// 	circle := NewCircle(xpos, ypos, radius, g.circleShader)
+		// 	g.engine.addCircle(circle)
+		// }
 		// smaller
 		for i := 0; len(g.engine.circles) < max && i < 7; i++ {
 			xbuffer := float64(g.width / 4)
@@ -169,6 +196,15 @@ func (g *Game) Draw(screen *ebiten.Image) {
 	cursorPos := cursorPosition()
 
 	screen.Fill(color.Black)
+	// draw rectangles
+	if g.showDebug {
+		for _, rect := range g.engine.collisionRects {
+			rw := rect.lowerRight.X - rect.upperLeft.X
+			rh := rect.lowerRight.Y - rect.upperLeft.Y
+			ebitenutil.DrawRect(screen, rect.upperLeft.X, rect.upperLeft.Y, rw, rh, color.RGBA{50, 50, 50, 255})
+		}
+	}
+
 	for i := range g.engine.circles {
 		g.engine.circles[i].Draw(screen)
 	}
@@ -192,6 +228,13 @@ func (g *Game) Draw(screen *ebiten.Image) {
 		}
 	}
 
+	escaped := 0
+	for i := range g.engine.circles {
+		if g.engine.circles[i].pos.X < 0 || g.engine.circles[i].pos.X > float64(g.width) || g.engine.circles[i].pos.Y < 0 || g.engine.circles[i].pos.Y > float64(g.height) {
+			escaped++
+		}
+	}
+
 	// Debug text and lines
 	if g.showFPS || g.showDebug {
 		var msg strings.Builder
@@ -211,6 +254,10 @@ func (g *Game) Draw(screen *ebiten.Image) {
 			msg.WriteString(strconv.Itoa(g.engine.checks))
 			msg.WriteString("\nMax Speed: ")
 			msg.WriteString(strconv.FormatFloat(g.engine.maxSpeed, 'f', 2, 64))
+			if escaped > 0 {
+				msg.WriteString("\nEscaped: ")
+				msg.WriteString(strconv.Itoa(escaped))
+			}
 			// msg.WriteString("\nUpdate Elapsed: ")
 			// msg.WriteString(strconv.FormatFloat(g.updateElapsedTime.Seconds(), 'f', 4, 64))
 			// msg.WriteString("\nDraw Elapsed: ")
@@ -230,6 +277,15 @@ func (g *Game) Draw(screen *ebiten.Image) {
 		}
 		ebitenutil.DebugPrint(screen, msg.String())
 	}
+
+	if g.showDebug {
+		for _, rect := range g.engine.collisionRects {
+			for _, point := range rect.collidePoints {
+				ebitenutil.DrawRect(screen, point.X, point.Y, 2, 2, color.RGBA{255, 0, 0, 255})
+			}
+		}
+	}
+
 	g.drawElapsedTime = time.Now().Sub(start)
 }
 
